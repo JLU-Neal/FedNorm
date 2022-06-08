@@ -5,7 +5,7 @@ To use datasets,first run  ```bash download_and_unzip.sh```  located under each 
 
 ### Distributed/Federated Molecule Property Classification experiments
 ```
-sh run_fedavg_distributed_pytorch.sh 6 1 1 1 graphsage homo 150 1 1 0.0015 256 256 0.3 256 256  sider "./../../../data/sider/" 0
+sh run_fedavg_distributed_pytorch.sh 6 1 1 1 graphsage homo 0.2 150 1 1 0.0015 256 256 0.3 256 256  sider FedAvg
 
 ##run on background
 nohup sh run_fedavg_distributed_pytorch.sh 6 1 1 1 graphsage homo 150 1 1 0.0015 256 256 0.3 256 256  sider "./../../../data/sider/" 0 > ./fedavg-graphsage.log 2>&1 &

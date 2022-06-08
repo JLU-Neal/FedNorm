@@ -143,7 +143,7 @@ def add_args(parser):
 
 def load_data(args, dataset_name):
     if (
-        (args.dataset != "SIDER")
+        (args.dataset != "sider")
         and (args.dataset != "ClinTox")
         and (args.dataset != "BBPB")
         and (args.dataset != "BACE")
