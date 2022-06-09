@@ -82,12 +82,21 @@ def create_random_split(path):
     )
 
 
-def create_non_uniform_split(args, idxs, client_number, is_train=True):
+def create_non_uniform_split(args, idxs, client_number, is_train=True, is_data_sharing=True):
     logging.info("create_non_uniform_split------------------------------------------")
     N = len(idxs)
     alpha = args.partition_alpha
-    logging.info("sample number = %d, client_number = %d" % (N, client_number))
+    logging.info("sample number (global shared data not count) = %d, client_number = %d" % (N, client_number))
     logging.info(idxs)
+    if is_data_sharing:
+        logging.info("data sharing strategy activated------>")
+        alpha = args.data_sharing_alpha
+        beta = args.data_sharing_beta
+        global_shared_dataset_size = int(N * beta)
+        global_shared_dataset = np.random.choice(idxs, global_shared_dataset_size, False)
+        alpha_portion_size = int (global_shared_dataset_size * alpha)
+        alpha_portion = np.random.choice(global_shared_dataset, alpha_portion_size, False).tolist()
+
     idx_batch_per_client = [[] for _ in range(client_number)]
     (
         idx_batch_per_client,
@@ -99,6 +108,10 @@ def create_non_uniform_split(args, idxs, client_number, is_train=True):
     sample_num_distribution = []
 
     for client_id in range(client_number):
+        
+        if is_data_sharing:
+            idx_batch_per_client[client_id] = idx_batch_per_client[client_id] + alpha_portion
+            
         sample_num_distribution.append(len(idx_batch_per_client[client_id]))
         logging.info(
             "client_id = %d, sample_number = %d"
