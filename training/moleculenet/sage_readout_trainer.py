@@ -1,4 +1,5 @@
 import logging
+from re import A
 
 import numpy as np
 import torch
@@ -7,7 +8,7 @@ from sklearn.metrics import roc_auc_score, precision_recall_curve, auc
 from tqdm import tqdm
 
 from FedML.fedml_core.trainer.model_trainer import ModelTrainer
-
+import experiments.experiments_manager as experiments_manager
 
 # Trainer for MoleculeNet. The evaluation metric is ROC-AUC
 
@@ -155,6 +156,12 @@ class SageMoleculeNetTrainer(ModelTrainer):
         avg_score = np.mean(np.array(score_list))
         logging.info("Test ROC-AUC Score = {}".format(avg_score))
         wandb.log({"Test/ROC-AUC": avg_score})
+        try:
+            experiments_manager.experiment.performance_by_iterations.append(avg_score)
+            logging.info("Result of current iteration saved")
+        except NameError:
+            logging.info("NameError found!!!!!")
+
         return True
 
     def _compare_models(self, model_1, model_2):

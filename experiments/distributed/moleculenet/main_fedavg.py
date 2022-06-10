@@ -9,6 +9,11 @@ import setproctitle
 import torch.nn
 import wandb
 
+import pickle
+import time
+
+
+
 sys.path.insert(0, os.path.abspath(os.path.join(os.getcwd(), "./../../../")))
 sys.path.insert(0, os.path.abspath(os.path.join(os.getcwd(), "")))
 from data_preprocessing.molecule.data_loader import *
@@ -25,7 +30,8 @@ from experiments.distributed.initializer import (
     get_fl_algorithm_initializer,
     set_seed,
 )
-
+# from experiments.experiments_manager import Experiment, ExperimentsManager, experiment
+import experiments.experiments_manager as experiments_manager
 
 def add_args(parser):
     """
@@ -331,6 +337,13 @@ if __name__ == "__main__":
             + str(args.lr),
             config=args,
         )
+        # create a experiment manager for the server process
+        if os.path.exists("../../experiment_manager.pkl"):
+            with open("../../experiment_manager.pkl", "rb") as f:
+                experiment_manager = pickle.load(f)
+        else:
+            experiment_manager = experiments_manager.ExperimentsManager()
+        experiments_manager.experiment.setAttr(args.model, args.fl_algorithm, args.dataset, time.time())
 
     set_seed(0)
 
@@ -392,4 +405,9 @@ if __name__ == "__main__":
         logging.info("traceback.format_exc():\n%s" % traceback.format_exc())
 
     if process_id == 0:
+        experiment_manager.experiments.append(experiment)
+        with open("../../experiment_manager.pkl", "wb") as f:
+            pickle.dump(experiment_manager, f)
+        logging.info("experiment results is saved in ../../experiment_manager.pkl")
+
         post_complete_message_to_sweep_process(args)
