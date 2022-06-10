@@ -1,3 +1,6 @@
+import os
+import pickle
+
 class Experiment:
     def __init__(self):
         self.Model = None
@@ -16,4 +19,10 @@ class ExperimentsManager:
     def __init__(self):
         self.experiments = {}
 
+
+if os.path.exists("../../experiment_manager.pkl"):
+    with open("../../experiment_manager.pkl", "rb") as f:
+        em = pickle.load(f)
+else:
+    em = ExperimentsManager()
 experiment = Experiment()

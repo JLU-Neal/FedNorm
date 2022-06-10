@@ -338,11 +338,7 @@ if __name__ == "__main__":
             config=args,
         )
         # create a experiment manager for the server process
-        if os.path.exists("../../experiment_manager.pkl"):
-            with open("../../experiment_manager.pkl", "rb") as f:
-                experiment_manager = pickle.load(f)
-        else:
-            experiment_manager = experiments_manager.ExperimentsManager()
+        
         experiments_manager.experiment.setAttr(args.model, args.fl_algorithm, args.dataset, time.time())
 
     set_seed(0)
@@ -404,10 +400,13 @@ if __name__ == "__main__":
         print(e)
         logging.info("traceback.format_exc():\n%s" % traceback.format_exc())
 
-    if process_id == 0:
-        experiment_manager.experiments.append(experiment)
-        with open("../../experiment_manager.pkl", "wb") as f:
-            pickle.dump(experiment_manager, f)
+
+    logging.info("process_id = %d, size = %d" % (process_id, worker_number))
+    if process_id == 1:
+        experiments_manager.em.experiments.update({args.model+args.fl_algorithm+args.dataset:experiments_manager.experiment})
+        pickle.dump(experiments_manager.em, open( "../../experiment_manager.pkl", "wb" ) )
+        # with open("../../experiment_manager.pkl", "wb") as f:
+        #     pickle.dump(experiments_manager.em, f)
         logging.info("experiment results is saved in ../../experiment_manager.pkl")
 
         post_complete_message_to_sweep_process(args)
