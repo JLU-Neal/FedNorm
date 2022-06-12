@@ -14,7 +14,7 @@ pip3 install torch-sparse -f https://pytorch-geometric.com/whl/torch-1.9.0+cu111
 pip3 install torch-geometric
 
 # install FedML git submodule
-cd FedML; git submodule init; git submodule update; cd ../;
+cd FedML; git submodule init; git submodule update; cd ../; git checkout submodule;
 pip install -r FedML/requirements.txt
 
 echo "------------nvidia-smi------------"
