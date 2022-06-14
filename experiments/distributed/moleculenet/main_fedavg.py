@@ -24,6 +24,7 @@ from training.moleculenet.sage_readout_trainer import SageMoleculeNetTrainer
 from training.moleculenet.gat_readout_trainer import GatMoleculeNetTrainer
 from training.moleculenet.gcn_readout_trainer import GcnMoleculeNetTrainer
 from FedML.fedml_api.distributed.fedavg.FedAvgAPI import FedML_init
+from experiments.utils import setOptimalParams
 
 from experiments.distributed.initializer import (
     add_federated_args,
@@ -296,6 +297,9 @@ if __name__ == "__main__":
     # parse python script input parameters
     parser = argparse.ArgumentParser()
     args = add_args(parser)
+
+    # adopt the optimal settings
+    args = setOptimalParams(args)
 
     # customize the process name
     str_process_name = "FedGraphNN:" + str(process_id)
