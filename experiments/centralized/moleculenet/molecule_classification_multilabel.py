@@ -6,6 +6,8 @@ import sys
 import numpy as np
 import torch.nn
 
+
+
 sys.path.insert(0, os.path.abspath(os.path.join(os.getcwd(), "./../../../")))
 sys.path.insert(0, os.path.abspath(os.path.join(os.getcwd(), "")))
 from data_preprocessing.molecule.data_loader import get_dataloader, get_data
@@ -15,7 +17,7 @@ from model.moleculenet.gcn_readout import GcnMoleculeNet
 from training.moleculenet.sage_readout_trainer import SageMoleculeNetTrainer
 from training.moleculenet.gat_readout_trainer import GatMoleculeNetTrainer
 from training.moleculenet.gcn_readout_trainer import GcnMoleculeNetTrainer
-
+from experiments.utils import setOptimalParams
 
 def add_args(parser):
     """
@@ -247,5 +249,9 @@ def train_model(args):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     args = add_args(parser)
+    
+    # adopt the optimal settings
+    args = setOptimalParams(args)
+
     test_score = train_model(args)
     print("Test ROC-AUC = {}".format(test_score[0]))
