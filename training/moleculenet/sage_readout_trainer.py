@@ -1,19 +1,32 @@
 import logging
 from re import A
+from tkinter.messagebox import NO
+from turtle import clone
 
 import numpy as np
 import torch
 import wandb
 from sklearn.metrics import roc_auc_score, precision_recall_curve, auc
 from tqdm import tqdm
+import copy
 
 from FedML.fedml_core.trainer.model_trainer import ModelTrainer
 import experiments.experiments_manager as experiments_manager
+from FedCovariateShiftEstimating.SetNet_cls import get_loss, SetNet
+from model.moleculenet.sage_readout import GraphSage, SageMoleculeNet
 
 # Trainer for MoleculeNet. The evaluation metric is ROC-AUC
 
 
 class SageMoleculeNetTrainer(ModelTrainer):
+    def __init__(self, model:SageMoleculeNet, args=None):
+        super().__init__(model, args)
+        
+        self.graph_model = copy.deepcopy(model.sage)
+        self.SetNet = SetNet()
+        self.test_data = None
+
+
     def get_model_params(self):
         return self.model.cpu().state_dict()
 
@@ -21,7 +34,12 @@ class SageMoleculeNetTrainer(ModelTrainer):
         logging.info("set_model_params")
         self.model.load_state_dict(model_parameters)
 
-    def train(self, train_data, device, args):
+    def train(self, train_data, device, args, client_index=1):
+        if args.SetNet:
+            graph_model = self.graph_model
+            set_net = self.SetNet
+            CSE_optimizer = torch.optim.Adam(list(set_net.parameters()) + list(graph_model.parameters()), lr=args.lr)
+            CSE_criterion = get_loss()
         model = self.model
 
         model.to(device)
@@ -41,6 +59,45 @@ class SageMoleculeNetTrainer(ModelTrainer):
 
         max_test_score = 0
         best_model_params = {}
+
+        set_feat_to_be_used = None
+        if args.SetNet:
+            for epoch in range(args.epochs_FedCSE):
+                graph_feat_list = []
+                CSE_optimizer.zero_grad()
+                mean_correct = []
+                for mol_idxs, (forest, feature_matrix, label, mask) in enumerate(train_data):
+                    # Pass on molecules that have no labels
+                    if torch.all(mask == 0).item():
+                        continue
+
+                    forest = [
+                        level.to(device=device, dtype=torch.long, non_blocking=True)
+                        for level in forest
+                    ]
+                    node_embeddings = graph_model(forest, feature_matrix)
+                    # Concat initial node attributed with embeddings from sage
+                    graph_feat = torch.cat((feature_matrix, node_embeddings), dim=1)  
+                    graph_feat = torch.mean(graph_feat, dim=0).unsqueeze(0)
+                    graph_feat_list.append(graph_feat)
+                graphs_feat = torch.cat(graph_feat_list, dim=0).unsqueeze(0)
+
+                graphs_feat = graphs_feat.permute(0, 2, 1)
+                logits_cse, trans_feat, set_feat = set_net(graphs_feat)
+                if set_feat_to_be_used is None:
+                    set_feat_to_be_used = set_feat.detach()
+
+                target = torch.tensor([client_index])
+                loss_cse = CSE_criterion(logits_cse.squeeze(), target.squeeze().long(), trans_feat)
+                loss_cse.backward()
+
+                pred_choice = logits_cse.data.max(1)[1]
+                correct = pred_choice.eq(target.long().data).cpu().sum()    
+                print(correct)
+                mean_correct.append(correct)
+            
+            CSE_optimizer.step()
+
         for epoch in range(args.epochs):
             for mol_idxs, (forest, feature_matrix, label, mask) in enumerate(
                 train_data
@@ -61,8 +118,13 @@ class SageMoleculeNetTrainer(ModelTrainer):
                 feature_matrix = feature_matrix.to(device=device, dtype=torch.float32, non_blocking=True)
                 label = label.to(device=device, dtype=torch.float32, non_blocking=True)
                 mask = mask.to(device=device, dtype=torch.float32, non_blocking=True)
+                set_feat_to_be_used = set_feat_to_be_used.to(device=device, dtype=torch.float32, non_blocking=True)
+                
 
-                logits = model(forest, feature_matrix)
+                if args.SetNet:
+                    logits = model(forest, feature_matrix, set_feat_to_be_used)
+                else:
+                    logits = model(forest, feature_matrix)
                 loss = criterion(logits, label) * mask
                 loss = loss.sum() / mask.sum()
 
@@ -73,7 +135,7 @@ class SageMoleculeNetTrainer(ModelTrainer):
                     mol_idxs == len(train_data) - 1
                 ):
                     if test_data is not None:
-                        test_score, _ = self.test(self.test_data, device, args)
+                        test_score, _ = self.test(self.test_data, device, args, set_feat_to_be_used)
                         print(
                             "Epoch = {}, Iter = {}/{}: Test Score = {}".format(
                                 epoch, mol_idxs + 1, len(train_data), test_score
@@ -88,7 +150,7 @@ class SageMoleculeNetTrainer(ModelTrainer):
 
         return max_test_score, best_model_params
 
-    def test(self, test_data, device, args):
+    def test(self, test_data, device, args, set_feat_to_be_used=None):
         logging.info("----------test--------")
         model = self.model
         model.eval()
@@ -107,7 +169,10 @@ class SageMoleculeNetTrainer(ModelTrainer):
                     device=device, dtype=torch.float32, non_blocking=True
                 )
 
-                logits = model(forest, feature_matrix)
+                if args.SetNet:
+                    logits = model(forest, feature_matrix, set_feat_to_be_used)
+                else:
+                    logits = model(forest, feature_matrix)
 
                 y_pred.append(logits.cpu().numpy())
                 y_true.append(label.numpy())

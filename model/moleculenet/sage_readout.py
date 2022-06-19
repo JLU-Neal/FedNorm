@@ -1,6 +1,11 @@
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 
+import sys
+import os
+sys.path.insert(0, os.path.abspath(os.path.join(os.getcwd(), "./../../")))
+from FedCovariateShiftEstimating.SetNet_cls import SetNet
 
 class GraphSage(nn.Module):
     """
@@ -92,6 +97,59 @@ class Readout(nn.Module):
         return logits
 
 
+class Readout_with_SetNet(Readout):
+    """
+    This module inherited from Readout, with an extra SetNet to learn the covariate shift of current client
+    """
+
+    def __init__(self, attr_dim, embedding_dim, hidden_dim, output_dim, num_cats, args=None):
+        super(Readout_with_SetNet, self).__init__(attr_dim, embedding_dim, hidden_dim, output_dim, num_cats)
+        self.setnet = SetNet()
+        x_dim = 1024
+        h_dim1 = 128
+        h_dim2 = 128
+        z_dim = 40
+        self.fc1 = nn.Linear(x_dim, h_dim1)
+        self.fc2 = nn.Linear(h_dim1, h_dim2)
+        self.fc31 = nn.Linear(h_dim2, z_dim)
+        self.fc32 = nn.Linear(h_dim2, z_dim)
+
+    def encoder(self, x):
+        h = F.relu(self.fc1(x))
+        h = F.relu(self.fc2(h))
+        return self.fc31(h), self.fc32(h) # mu, log_var
+
+    def transform(self, combined_rep, mu, log_var):
+        std = torch.exp(0.5*log_var)
+        # eps = torch.randn_like(std)
+        return combined_rep.mul(std).add_(mu) # return z sample
+
+    def forward(self, node_features, node_embeddings, set_feat):
+        # Concat initial node attributed with embeddings from sage
+        combined_rep = torch.cat(
+            (node_features, node_embeddings), dim=1
+        )  
+
+        # Use set_feat to generate mu and log_var 
+        mu, log_var = self.encoder(set_feat)
+
+        # Affine Transformation
+        combined_rep = self.transform(combined_rep, mu, log_var)
+
+        # Generate final graph level embedding
+        hidden_rep = self.act(self.layer1(combined_rep))
+        graph_rep = self.act(
+            self.layer2(hidden_rep)
+        )   
+
+        # Generated logits for multilabel classification
+        logits = torch.mean(
+            self.output(graph_rep), dim=0
+        )  
+
+        return logits
+
+
 class SageMoleculeNet(nn.Module):
     """
     Network that consolidates Sage + Readout into a single nn.Module
@@ -105,7 +163,7 @@ class SageMoleculeNet(nn.Module):
         sage_dropout,
         readout_hidden_dim,
         graph_embedding_dim,
-        num_categories,
+        num_categories, args=None
     ):
         super(SageMoleculeNet, self).__init__()
         self.sage = GraphSage(
@@ -119,7 +177,40 @@ class SageMoleculeNet(nn.Module):
             num_categories,
         )
 
-    def forward(self, forest, feature_matrix):
+        if args is None or not args.SetNet: 
+            self.readout = Readout(
+                feat_dim,
+                node_embedding_dim,
+                readout_hidden_dim,
+                graph_embedding_dim,
+                num_categories,
+            )
+        else: 
+            self.embedding_for_CSE = GraphSage(
+                feat_dim, sage_hidden_dim1, node_embedding_dim, sage_dropout
+            )
+
+            self.readout = Readout_with_SetNet(
+                feat_dim,
+                node_embedding_dim,
+                readout_hidden_dim,
+                graph_embedding_dim,
+                num_categories,
+                args
+            )
+
+    def forward(self, forest, feature_matrix, set_feat=None):
         node_embeddings = self.sage(forest, feature_matrix)
-        logits = self.readout(feature_matrix, node_embeddings)
+
+        if set_feat is None:
+            logits = self.readout(feature_matrix, node_embeddings)
+        else:
+            logits = self.readout(feature_matrix, node_embeddings, set_feat)
         return logits
+        # if not isinstance(self.readout, Readout_with_SetNet):
+        #     logits = self.readout(feature_matrix, node_embeddings)
+        #     return logits
+        # else:
+        #     embedding_for_CSE = self.embedding_for_CSE(forest, feature_matrix)
+        #     logits, logits_cse = self.readout(feature_matrix, node_embeddings, embedding_for_CSE)
+        #     return logits, logits_cse
