@@ -18,11 +18,11 @@ class STN3d(nn.Module):
         self.fc3 = nn.Linear(256, 9)
         self.relu = nn.ReLU()
 
-        self.bn1 = nn.BatchNorm1d(64)
-        self.bn2 = nn.BatchNorm1d(128)
-        self.bn3 = nn.BatchNorm1d(1024)
-        self.bn4 = nn.BatchNorm1d(512)
-        self.bn5 = nn.BatchNorm1d(256)
+        self.bn1 = nn.InstanceNorm1d(64)
+        self.bn2 = nn.InstanceNorm1d(128)
+        self.bn3 = nn.InstanceNorm1d(1024)
+        self.bn4 = nn.InstanceNorm1d(512)
+        self.bn5 = nn.InstanceNorm1d(256)
 
     def forward(self, x):
         batchsize = x.size()[0]
@@ -56,11 +56,11 @@ class STNkd(nn.Module):
         self.fc3 = nn.Linear(256, k * k)
         self.relu = nn.ReLU()
 
-        self.bn1 = nn.BatchNorm1d(64)
-        self.bn2 = nn.BatchNorm1d(128)
-        self.bn3 = nn.BatchNorm1d(1024)
-        self.bn4 = nn.BatchNorm1d(512)
-        self.bn5 = nn.BatchNorm1d(256)
+        self.bn1 = nn.InstanceNorm1d(64)
+        self.bn2 = nn.InstanceNorm1d(128)
+        self.bn3 = nn.InstanceNorm1d(1024)
+        self.bn4 = nn.InstanceNorm1d(512)
+        self.bn5 = nn.InstanceNorm1d(256)
 
         self.k = k
 
@@ -86,15 +86,15 @@ class STNkd(nn.Module):
 
 
 class PointNetEncoder(nn.Module):
-    def __init__(self, global_feat=True, feature_transform=False, channel=3):
+    def __init__(self, global_feat=True, feature_transform=False, channel=40):
         super(PointNetEncoder, self).__init__()
         self.stn = STN3d(channel)
         self.conv1 = torch.nn.Conv1d(channel, 64, 1)
         self.conv2 = torch.nn.Conv1d(64, 128, 1)
         self.conv3 = torch.nn.Conv1d(128, 1024, 1)
-        self.bn1 = nn.BatchNorm1d(64)
-        self.bn2 = nn.BatchNorm1d(128)
-        self.bn3 = nn.BatchNorm1d(1024)
+        self.bn1 = nn.InstanceNorm1d(64)
+        self.bn2 = nn.InstanceNorm1d(128)
+        self.bn3 = nn.InstanceNorm1d(1024)
         self.global_feat = global_feat
         self.feature_transform = feature_transform
         if self.feature_transform:
