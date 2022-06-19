@@ -152,6 +152,9 @@ def add_args(parser):
 
     parser.add_argument("--test_freq", type=int, default=1024, help="How often to test")
 
+    parser.add_argument("--SetNet", type=bool, default=True, help="Whether to use SetNet")
+
+    parser.add_argument("--epochs_FedCSE", type=int, default=10, help="How many epochs to train FedCSE")
     args = parser.parse_args()
 
     return args
@@ -206,6 +209,7 @@ def train_model(args):
             args.readout_hidden_dim,
             args.graph_embedding_dim,
             num_cats,
+            args
         )
         trainer = SageMoleculeNetTrainer(model)
     elif args.model == "gat":
@@ -251,7 +255,7 @@ if __name__ == "__main__":
     args = add_args(parser)
     
     # adopt the optimal settings
-    args = setOptimalParams(args)
+    # args = setOptimalParams(args)
 
     test_score = train_model(args)
     print("Test ROC-AUC = {}".format(test_score[0]))
