@@ -1,5 +1,6 @@
 import logging
 from re import A
+from tkinter import N
 from tkinter.messagebox import NO
 from turtle import clone
 
@@ -23,23 +24,35 @@ class SageMoleculeNetTrainer(ModelTrainer):
         super().__init__(model, args)
         
         self.graph_model = copy.deepcopy(model.sage)
-        self.SetNet = SetNet()
+        self.setnet = SetNet()
         self.test_data = None
 
 
     def get_model_params(self):
         return self.model.cpu().state_dict()
 
+    def get_cse_params(self):
+        return self.graph_model.cpu().state_dict(), self.setnet.cpu().state_dict()
+
     def set_model_params(self, model_parameters):
         logging.info("set_model_params")
         self.model.load_state_dict(model_parameters)
 
+    def set_cse_params(self, graphmodel_params, setnet_params):
+        logging.info("----------set_cse_params--------")
+        self.graph_model.load_state_dict(graphmodel_params)
+        self.setnet.load_state_dict(setnet_params)
+
     def train(self, train_data, device, args, client_index=1):
         if args.SetNet:
             graph_model = self.graph_model
-            set_net = self.SetNet
+            set_net = self.setnet
+            graph_model.to(device)
+            set_net.to(device)
+            graph_model.train()
+            set_net.train()
             CSE_optimizer = torch.optim.Adam(list(set_net.parameters()) + list(graph_model.parameters()), lr=args.lr)
-            CSE_criterion = get_loss()
+            CSE_criterion = get_loss().to(device)
         model = self.model
 
         model.to(device)
@@ -61,6 +74,9 @@ class SageMoleculeNetTrainer(ModelTrainer):
         best_model_params = {}
 
         set_feat_to_be_used = None
+        latest_graphmodel_params = None
+        latest_setnet_params = None
+
         if args.SetNet:
             for epoch in range(args.epochs_FedCSE):
                 graph_feat_list = []
@@ -75,19 +91,20 @@ class SageMoleculeNetTrainer(ModelTrainer):
                         level.to(device=device, dtype=torch.long, non_blocking=True)
                         for level in forest
                     ]
+                    feature_matrix = feature_matrix.to(device=device, dtype=torch.float, non_blocking=True)
+
                     node_embeddings = graph_model(forest, feature_matrix)
                     # Concat initial node attributed with embeddings from sage
-                    graph_feat = torch.cat((feature_matrix, node_embeddings), dim=1)  
+                    graph_feat = torch.cat((feature_matrix, node_embeddings), dim=1) 
                     graph_feat = torch.mean(graph_feat, dim=0).unsqueeze(0)
                     graph_feat_list.append(graph_feat)
                 graphs_feat = torch.cat(graph_feat_list, dim=0).unsqueeze(0)
-
                 graphs_feat = graphs_feat.permute(0, 2, 1)
                 logits_cse, trans_feat, set_feat = set_net(graphs_feat)
                 if set_feat_to_be_used is None:
                     set_feat_to_be_used = set_feat.detach()
 
-                target = torch.tensor([client_index])
+                target = torch.tensor([client_index]).to(device)
                 loss_cse = CSE_criterion(logits_cse.squeeze(), target.squeeze().long(), trans_feat)
                 loss_cse.backward()
 
@@ -97,6 +114,12 @@ class SageMoleculeNetTrainer(ModelTrainer):
                 mean_correct.append(correct)
             
             CSE_optimizer.step()
+            latest_graphmodel_params = {
+                k: v.cpu() for k, v in graph_model.state_dict().items()
+            }
+            latest_setnet_params = {
+                k: v.cpu() for k, v in set_net.state_dict().items()
+            }
 
         for epoch in range(args.epochs):
             for mol_idxs, (forest, feature_matrix, label, mask) in enumerate(
@@ -148,7 +171,7 @@ class SageMoleculeNetTrainer(ModelTrainer):
                             }
                         print("Current best = {}".format(max_test_score))
 
-        return max_test_score, best_model_params
+        return max_test_score, best_model_params, latest_graphmodel_params, latest_setnet_params
 
     def test(self, test_data, device, args, set_feat_to_be_used=None):
         logging.info("----------test--------")
@@ -209,9 +232,37 @@ class SageMoleculeNetTrainer(ModelTrainer):
 
         model_list, score_list = [], []
         for client_idx in test_data_local_dict.keys():
-
             test_data = test_data_local_dict[client_idx]
-            score, model = self.test(test_data, device, args)
+            set_feat_to_be_used = None
+            with torch.no_grad():
+                graph_model = self.graph_model
+                set_net = self.setnet
+                graph_model.eval()
+                set_net.eval()
+                graph_model.to(device)
+                set_net.to(device)
+                graph_feat_list = []
+                for mol_idxs, (forest, feature_matrix, label, mask) in enumerate(test_data):
+                    forest = [
+                        level.to(device=device, dtype=torch.long, non_blocking=True)
+                        for level in forest
+                    ]
+                    feature_matrix = feature_matrix.to(device=device, dtype=torch.float, non_blocking=True)
+                    node_embeddings = graph_model(forest, feature_matrix)
+                    # Concat initial node attributed with embeddings from sage
+                    graph_feat = torch.cat((feature_matrix, node_embeddings), dim=1) 
+                    graph_feat = torch.mean(graph_feat, dim=0).unsqueeze(0)
+                    graph_feat_list.append(graph_feat)
+                graphs_feat = torch.cat(graph_feat_list, dim=0).unsqueeze(0)
+                logging.info("graphs_feat.shape: {}".format(graphs_feat.shape))
+                graphs_feat = graphs_feat.permute(0, 2, 1)
+                logits_cse, trans_feat, set_feat = set_net(graphs_feat)
+                if set_feat_to_be_used is None:
+                    set_feat_to_be_used = set_feat.detach()
+               
+
+            
+            score, model = self.test(test_data, device, args, set_feat_to_be_used)
             for idx in range(len(model_list)):
                 self._compare_models(model, model_list[idx])
             model_list.append(model)

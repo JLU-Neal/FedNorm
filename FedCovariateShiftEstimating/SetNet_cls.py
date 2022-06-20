@@ -7,9 +7,9 @@ class SetNet(nn.Module):
     def __init__(self, k=6, normal_channel=True):
         super(SetNet, self).__init__()
         if normal_channel:
-            channel = 40
+            channel = 24
         else:
-            channel = 40
+            channel = 24
         self.feat = PointNetEncoder(global_feat=True, feature_transform=True, channel=channel)
         self.fc1 = nn.Linear(1024, 512)
         self.fc2 = nn.Linear(512, 256)

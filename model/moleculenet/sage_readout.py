@@ -108,7 +108,7 @@ class Readout_with_SetNet(Readout):
         x_dim = 1024
         h_dim1 = 128
         h_dim2 = 128
-        z_dim = 40
+        z_dim = 24
         self.fc1 = nn.Linear(x_dim, h_dim1)
         self.fc2 = nn.Linear(h_dim1, h_dim2)
         self.fc31 = nn.Linear(h_dim2, z_dim)

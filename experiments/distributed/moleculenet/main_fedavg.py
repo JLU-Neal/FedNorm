@@ -225,6 +225,7 @@ def create_model(args, model_name, feat_dim, num_cats, output_dim):
             args.readout_hidden_dim,
             args.graph_embedding_dim,
             num_cats,
+            args
         )
         trainer = SageMoleculeNetTrainer(model)
     elif model_name == "gat":
