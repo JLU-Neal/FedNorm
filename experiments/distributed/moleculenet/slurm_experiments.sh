@@ -14,7 +14,7 @@ echo $PROCESS_NUM
 
 hostname > mpi_host_file
 
-source /vol/bitbucket/{USER}/miniconda/etc/profile.d/conda.sh
+source /vol/bitbucket/zt520/miniconda/etc/profile.d/conda.sh
 conda activate fedgraphnn
 . /vol/cuda/11.1.0-cudnn8.0.4.30/setup.sh
 
