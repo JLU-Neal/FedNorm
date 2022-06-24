@@ -1,0 +1,10 @@
+{
+    "CLIENT_NUM": 6,
+    "WORKER_NUM": 1,
+    "SERVER_NUM": 1,
+    "GPU_NUM_PER_SERVER": 1, 
+    "PARTITION_ALPHA": 0.5,
+    "ROUND": 150,
+    "EPOCH": 1,
+    "BATCH_SIZE": 1
+}
