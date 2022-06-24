@@ -6,7 +6,7 @@ from turtle import clone
 
 import numpy as np
 import torch
-import wandb
+# import wandb
 from sklearn.metrics import roc_auc_score, precision_recall_curve, auc
 from tqdm import tqdm
 import copy
@@ -268,10 +268,10 @@ class SageMoleculeNetTrainer(ModelTrainer):
             model_list.append(model)
             score_list.append(score)
             logging.info("Client {}, Test ROC-AUC score = {}".format(client_idx, score))
-            wandb.log({"Client {} Test/ROC-AUC".format(client_idx): score})
+            # wandb.log({"Client {} Test/ROC-AUC".format(client_idx): score})
         avg_score = np.mean(np.array(score_list))
         logging.info("Test ROC-AUC Score = {}".format(avg_score))
-        wandb.log({"Test/ROC-AUC": avg_score})
+        # wandb.log({"Test/ROC-AUC": avg_score})
         try:
             experiments_manager.experiment.performance_by_iterations.append(avg_score)
             logging.info("Result of current iteration saved")
