@@ -138,8 +138,8 @@ def add_federated_args(parser):
     
     parser.add_argument("--SetNet", type=bool, default=True, help="Whether to use SetNet")
 
-    parser.add_argument("--epochs_FedCSE", type=int, default=100, help="How many epochs to train FedCSE")
+    parser.add_argument("--epochs_FedCSE", type=int, default=20, help="How many epochs to train FedCSE")
 
-    parser.add_argument("--CSE_aggregate_rounds", type=int, default=3, help="How many rounds to aggregate FedCSE")
+    parser.add_argument("--CSE_aggregate_rounds", type=int, default=2, help="How many rounds to aggregate FedCSE")
     
     return parser
