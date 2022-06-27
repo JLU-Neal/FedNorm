@@ -167,7 +167,7 @@ def partition_data_by_sample_size(
         clients_idxs_test = np.array_split(test_idxs, client_number)
     else:
         clients_idxs_train = create_non_uniform_split(
-            args, train_idxs, client_number, True
+            args, train_idxs, client_number, args.is_data_sharing
         )
         clients_idxs_val = create_non_uniform_split(
             args, val_idxs, client_number, False

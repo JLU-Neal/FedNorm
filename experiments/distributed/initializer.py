@@ -144,5 +144,6 @@ def add_federated_args(parser):
     
     parser.add_argument("--CSE_pretrain_rounds", type=int, default=100, help="How many rounds to pretrain FedCSE")
 
+    parser.add_argument("--is_data_sharing", type=bool, default=False, help="Whether to use data sharing")
 
     return parser
