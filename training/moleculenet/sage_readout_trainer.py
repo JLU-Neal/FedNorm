@@ -110,10 +110,10 @@ class SageMoleculeNetTrainer(ModelTrainer):
 
                 pred_choice = logits_cse.data.max(1)[1]
                 correct = pred_choice.eq(target.long().data).cpu().sum()    
-                logging.info("Epoch:", epoch, "Loss:", loss_cse.item(), "Correct:", correct)
+                logging.info("Epoch: {}, Loss: {}, Correct: {}".format(epoch, loss_cse.item(), correct))
                 mean_correct.append(correct)
-            
-            CSE_optimizer.step()
+                CSE_optimizer.step()
+                
             latest_graphmodel_params = {
                 k: v.cpu() for k, v in graph_model.state_dict().items()
             }
