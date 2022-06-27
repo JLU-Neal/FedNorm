@@ -29,7 +29,7 @@ def setOptimalParams(args):
 
     # fed params
     args.client_num_in_total = fedParamsConfig['CLIENT_NUM']
-    args.client_num_per_round = fedParamsConfig['WORKER_NUM']
+    # args.client_num_per_round = fedParamsConfig['WORKER_NUM']
     args.gpu_server_num = fedParamsConfig['SERVER_NUM']
     args.gpu_num_per_server = fedParamsConfig['GPU_NUM_PER_SERVER']
     args.partition_alpha = fedParamsConfig['PARTITION_ALPHA']

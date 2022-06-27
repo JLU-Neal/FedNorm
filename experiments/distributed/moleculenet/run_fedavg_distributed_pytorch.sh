@@ -35,7 +35,7 @@ mpirun -np $PROCESS_NUM -hostfile ./mpi_host_file python3 main_fedavg.py \
   --fl_algorithm $FL_ALG \
   --dataset $DATASET \
   --partition_method $DISTRIBUTION  \
-
+  --client_num_per_round $WORKER_NUM \
 # mpirun -np $PROCESS_NUM -hostfile ./mpi_host_file python3 main_fedavg.py \
 #   --gpu_server_num $SERVER_NUM \
 #   --gpu_num_per_server $GPU_NUM_PER_SERVER \
