@@ -142,4 +142,7 @@ def add_federated_args(parser):
 
     parser.add_argument("--CSE_aggregate_rounds", type=int, default=2, help="How many rounds to aggregate FedCSE")
     
+    parser.add_argument("--CSE_pretrain_rounds", type=int, default=100, help="How many rounds to pretrain FedCSE")
+
+
     return parser

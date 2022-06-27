@@ -113,63 +113,65 @@ class SageMoleculeNetTrainer(ModelTrainer):
                 logging.info("Epoch: {}, Loss: {}, Correct: {}".format(epoch, loss_cse.item(), correct))
                 mean_correct.append(correct)
                 CSE_optimizer.step()
-                
+
             latest_graphmodel_params = {
                 k: v.cpu() for k, v in graph_model.state_dict().items()
             }
             latest_setnet_params = {
                 k: v.cpu() for k, v in set_net.state_dict().items()
             }
-
-        for epoch in range(args.epochs):
-            for mol_idxs, (forest, feature_matrix, label, mask) in enumerate(
-                train_data
-            ):
-                # Pass on molecules that have no labels
-                if torch.all(mask == 0).item():
-                    continue
-
-                optimizer.zero_grad()
-
-                forest = [
-                    level.to(device=device, dtype=torch.long, non_blocking=True)
-                    for level in forest
-                ]
-                sizes = [level.size() for level in forest]
-                types = [level.dtype for level in forest]
-
-                feature_matrix = feature_matrix.to(device=device, dtype=torch.float32, non_blocking=True)
-                label = label.to(device=device, dtype=torch.float32, non_blocking=True)
-                mask = mask.to(device=device, dtype=torch.float32, non_blocking=True)
-                set_feat_to_be_used = set_feat_to_be_used.to(device=device, dtype=torch.float32, non_blocking=True)
-                
-
-                if args.SetNet:
-                    logits = model(forest, feature_matrix, set_feat_to_be_used)
-                else:
-                    logits = model(forest, feature_matrix)
-                loss = criterion(logits, label) * mask
-                loss = loss.sum() / mask.sum()
-
-                loss.backward()
-                optimizer.step()
-
-                if ((mol_idxs + 1) % args.frequency_of_the_test == 0) or (
-                    mol_idxs == len(train_data) - 1
+        if args.round_idx < args.CSE_pretrain_rounds:
+            pass
+        else:
+            for epoch in range(args.epochs):
+                for mol_idxs, (forest, feature_matrix, label, mask) in enumerate(
+                    train_data
                 ):
-                    if test_data is not None:
-                        test_score, _ = self.test(self.test_data, device, args, set_feat_to_be_used)
-                        print(
-                            "Epoch = {}, Iter = {}/{}: Test Score = {}".format(
-                                epoch, mol_idxs + 1, len(train_data), test_score
+                    # Pass on molecules that have no labels
+                    if torch.all(mask == 0).item():
+                        continue
+
+                    optimizer.zero_grad()
+
+                    forest = [
+                        level.to(device=device, dtype=torch.long, non_blocking=True)
+                        for level in forest
+                    ]
+                    sizes = [level.size() for level in forest]
+                    types = [level.dtype for level in forest]
+
+                    feature_matrix = feature_matrix.to(device=device, dtype=torch.float32, non_blocking=True)
+                    label = label.to(device=device, dtype=torch.float32, non_blocking=True)
+                    mask = mask.to(device=device, dtype=torch.float32, non_blocking=True)
+                    set_feat_to_be_used = set_feat_to_be_used.to(device=device, dtype=torch.float32, non_blocking=True)
+                    
+
+                    if args.SetNet:
+                        logits = model(forest, feature_matrix, set_feat_to_be_used)
+                    else:
+                        logits = model(forest, feature_matrix)
+                    loss = criterion(logits, label) * mask
+                    loss = loss.sum() / mask.sum()
+
+                    loss.backward()
+                    optimizer.step()
+
+                    if ((mol_idxs + 1) % args.frequency_of_the_test == 0) or (
+                        mol_idxs == len(train_data) - 1
+                    ):
+                        if test_data is not None:
+                            test_score, _ = self.test(self.test_data, device, args, set_feat_to_be_used)
+                            print(
+                                "Epoch = {}, Iter = {}/{}: Test Score = {}".format(
+                                    epoch, mol_idxs + 1, len(train_data), test_score
+                                )
                             )
-                        )
-                        if test_score > max_test_score:
-                            max_test_score = test_score
-                            best_model_params = {
-                                k: v.cpu() for k, v in model.state_dict().items()
-                            }
-                        print("Current best = {}".format(max_test_score))
+                            if test_score > max_test_score:
+                                max_test_score = test_score
+                                best_model_params = {
+                                    k: v.cpu() for k, v in model.state_dict().items()
+                                }
+                            print("Current best = {}".format(max_test_score))
 
         return max_test_score, best_model_params, latest_graphmodel_params, latest_setnet_params
 
@@ -228,6 +230,9 @@ class SageMoleculeNetTrainer(ModelTrainer):
     def test_on_the_server(
         self, train_data_local_dict, test_data_local_dict, device, args=None
     ) -> bool:
+        if args.round_idx < args.CSE_pretrain_rounds:
+            return True
+
         logging.info("----------test_on_the_server--------")
 
         model_list, score_list = [], []
