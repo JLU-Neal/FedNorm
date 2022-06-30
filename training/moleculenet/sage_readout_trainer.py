@@ -26,6 +26,7 @@ class SageMoleculeNetTrainer(ModelTrainer):
         self.graph_model = copy.deepcopy(model.sage)
         self.setnet = SetNet()
         self.test_data = None
+        self.best_score = 0
 
 
     def get_model_params(self):
@@ -40,7 +41,7 @@ class SageMoleculeNetTrainer(ModelTrainer):
 
     def set_cse_params(self, graphmodel_params, setnet_params):
         logging.info("----------set_cse_params--------")
-        self.graph_model.load_state_dict(graphmodel_params)
+        self.graph_model = copy.deepcopy(self.model.sage)
         self.setnet.load_state_dict(setnet_params)
 
     def train(self, train_data, device, args, client_index=1):
@@ -49,9 +50,9 @@ class SageMoleculeNetTrainer(ModelTrainer):
             set_net = self.setnet
             graph_model.to(device)
             set_net.to(device)
-            graph_model.train()
+            graph_model.eval()
             set_net.train()
-            CSE_optimizer = torch.optim.Adam(list(set_net.parameters()) + list(graph_model.parameters()), lr=args.lr)
+            CSE_optimizer = torch.optim.Adam(list(set_net.parameters()), lr=args.lr)
             CSE_criterion = get_loss().to(device)
         model = self.model
 
@@ -92,8 +93,8 @@ class SageMoleculeNetTrainer(ModelTrainer):
                         for level in forest
                     ]
                     feature_matrix = feature_matrix.to(device=device, dtype=torch.float, non_blocking=True)
-
-                    node_embeddings = graph_model(forest, feature_matrix)
+                    with torch.no_grad():
+                        node_embeddings = graph_model(forest, feature_matrix)
                     # Concat initial node attributed with embeddings from sage
                     graph_feat = torch.cat((feature_matrix, node_embeddings), dim=1) 
                     graph_feat = torch.mean(graph_feat, dim=0).unsqueeze(0)
@@ -274,8 +275,22 @@ class SageMoleculeNetTrainer(ModelTrainer):
             score_list.append(score)
             logging.info("Client {}, Test ROC-AUC score = {}".format(client_idx, score))
             # wandb.log({"Client {} Test/ROC-AUC".format(client_idx): score})
-        avg_score = np.mean(np.array(score_list))
+        # calculate the weighted average ROC-AUC score
+        
+        total_sample_num = 0
+        for client_idx in test_data_local_dict.keys():
+            total_sample_num += len(test_data_local_dict[client_idx].dataset)
+            logging.info("Client {}, Test Sample Num = {}".format(client_idx, len(test_data_local_dict[client_idx].dataset)))
+        logging.info("Total Test Sample Num = {}".format(total_sample_num))
+        client_weights = [len(test_data_local_dict[client_idx].dataset) / total_sample_num for client_idx in test_data_local_dict.keys()]
+        logging.info("client_weights: {}".format(client_weights))
+        avg_score = np.average(score_list, weights=client_weights)
+        if avg_score > self.best_score:
+            self.best_score = avg_score
+        
+        # avg_score = np.mean(np.array(score_list))
         logging.info("Test ROC-AUC Score = {}".format(avg_score))
+        logging.info("Best Test ROC-AUC score = {}".format(self.best_score))
         # wandb.log({"Test/ROC-AUC": avg_score})
         try:
             experiments_manager.experiment.performance_by_iterations.append(avg_score)
