@@ -169,13 +169,13 @@ class SageMoleculeNet(nn.Module):
         self.sage = GraphSage(
             feat_dim, sage_hidden_dim1, node_embedding_dim, sage_dropout
         )
-        self.readout = Readout(
-            feat_dim,
-            node_embedding_dim,
-            readout_hidden_dim,
-            graph_embedding_dim,
-            num_categories,
-        )
+        # self.readout = Readout(
+        #     feat_dim,
+        #     node_embedding_dim,
+        #     readout_hidden_dim,
+        #     graph_embedding_dim,
+        #     num_categories,
+        # )
 
         if args is None or not args.SetNet: 
             self.readout = Readout(
@@ -186,9 +186,9 @@ class SageMoleculeNet(nn.Module):
                 num_categories,
             )
         else: 
-            self.embedding_for_CSE = GraphSage(
-                feat_dim, sage_hidden_dim1, node_embedding_dim, sage_dropout
-            )
+            # self.embedding_for_CSE = GraphSage(
+            #     feat_dim, sage_hidden_dim1, node_embedding_dim, sage_dropout
+            # )
 
             self.readout = Readout_with_SetNet(
                 feat_dim,

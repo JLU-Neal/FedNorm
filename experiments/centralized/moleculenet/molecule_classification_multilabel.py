@@ -14,7 +14,7 @@ from data_preprocessing.molecule.data_loader import get_dataloader, get_data
 from model.moleculenet.sage_readout import SageMoleculeNet
 from model.moleculenet.gat_readout import GatMoleculeNet
 from model.moleculenet.gcn_readout import GcnMoleculeNet
-from training.moleculenet.sage_readout_trainer import SageMoleculeNetTrainer
+from training.moleculenet.sage_readout_trainer_origin import SageMoleculeNetTrainer
 from training.moleculenet.gat_readout_trainer import GatMoleculeNetTrainer
 from training.moleculenet.gcn_readout_trainer import GcnMoleculeNetTrainer
 from experiments.utils import setOptimalParams
@@ -30,7 +30,7 @@ def add_args(parser):
         "--dataset", type=str, default="sider", help="Dataset used for training"
     )
 
-    parser.add_argument("--data_dir", type=str, default="./data/moleculenet", help="Data directory")
+    parser.add_argument("--data_dir", type=str, default="./../../../data/moleculenet/", help="Data directory")
 
     parser.add_argument(
         "--normalize_features",
@@ -61,13 +61,13 @@ def add_args(parser):
     )
 
     parser.add_argument(
-        "--hidden_size", type=int, default=32, help="Size of GNN hidden layer"
+        "--hidden_size", type=int, default=64, help="Size of GNN hidden layer"
     )
 
     parser.add_argument(
         "--node_embedding_dim",
         type=int,
-        default=32,
+        default=16,
         help="Dimensionality of the vector space the atoms will be embedded in",
     )
 
@@ -82,7 +82,7 @@ def add_args(parser):
     parser.add_argument(
         "--dropout",
         type=float,
-        default=0.3,
+        default=0.6,
         help="Dropout used between GraphSAGE layers",
     )
 
@@ -152,7 +152,7 @@ def add_args(parser):
 
     parser.add_argument("--test_freq", type=int, default=1024, help="How often to test")
 
-    parser.add_argument("--SetNet", type=bool, default=True, help="Whether to use SetNet")
+    parser.add_argument("--SetNet", type=bool, default=False, help="Whether to use SetNet")
 
     parser.add_argument("--epochs_FedCSE", type=int, default=10, help="How many epochs to train FedCSE")
     args = parser.parse_args()
@@ -246,6 +246,9 @@ def train_model(args):
 
     trainer.test_data = test_data
     max_test_score, best_model_params = trainer.train(train_data, device, args)
+    
+    # save the best model
+    torch.save(best_model_params, "./best_graph_sage_model.pt")
 
     return max_test_score, best_model_params
 
