@@ -1,10 +1,7 @@
 import sys
 import os
 import argparse
-from cv2 import log
 import torch
-from zmq import device
-
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.getcwd(), "./../../../")))
 sys.path.insert(0, os.path.abspath(os.path.join(os.getcwd(), "")))
@@ -71,7 +68,7 @@ def main():
     set_net.train()
     CSE_optimizer = torch.optim.Adam(list(set_net.parameters()), lr=1e-4)
     CSE_criterion = get_loss().to(device)
-    for epoch in range(100):
+    for epoch in range(1000):
         graph_feat_list = []
         CSE_optimizer.zero_grad()
         mean_correct = []
