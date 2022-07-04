@@ -294,6 +294,7 @@ class SageMoleculeNetTrainer(ModelTrainer):
         # wandb.log({"Test/ROC-AUC": avg_score})
         try:
             experiments_manager.experiment.performance_by_iterations.append(avg_score)
+            experiments_manager.experiment.best_performance = self.best_score
             logging.info("Result of current iteration saved")
         except NameError:
             logging.info("NameError found!!!!!")

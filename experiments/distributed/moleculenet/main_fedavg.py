@@ -407,11 +407,20 @@ if __name__ == "__main__":
 
 
     logging.info("process_id = %d, size = %d" % (process_id, worker_number))
-    if process_id == 1:
-        experiments_manager.em.experiments.update({args.model+args.fl_algorithm+args.dataset:experiments_manager.experiment})
-        pickle.dump(experiments_manager.em, open( "../../experiment_manager.pkl", "wb" ) )
-        # with open("../../experiment_manager.pkl", "wb") as f:
-        #     pickle.dump(experiments_manager.em, f)
-        logging.info("experiment results is saved in ../../experiment_manager.pkl")
 
-        post_complete_message_to_sweep_process(args)
+
+
+
+    # if process_id == 1:
+    #     if os.path.exists("./experiment_manager.pkl"):
+    #         with open("./experiment_manager.pkl", "rb") as f:
+    #             em = pickle.load(f)
+    #             logging.info(em)
+    #     else:
+    #         em = experiments_manager.ExperimentsManager()
+    #     em.experiments.update({args.model+args.fl_algorithm+args.dataset:experiments_manager.experiment})
+    #     print(em)
+    #     pickle.dump(em, open( "../../experiment_manager.pkl", "wb" ) )
+    #     logging.info("experiment results is saved in ../../experiment_manager.pkl")
+
+    #     post_complete_message_to_sweep_process(args)

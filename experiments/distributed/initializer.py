@@ -11,6 +11,10 @@ from FedML.fedml_api.distributed.fedprox.FedProxAPI import FedML_FedProx_distrib
 def get_fl_algorithm_initializer(alg_name):
     if alg_name == "FedAvg":
         fl_algorithm = FedML_FedAvg_distributed
+    elif alg_name == "DataSharing":
+        fl_algorithm = FedML_FedAvg_distributed
+    elif alg_name == "FedNorm":
+        fl_algorithm = FedML_FedAvg_distributed
     elif alg_name == "FedOPT":
         fl_algorithm = FedML_FedOpt_distributed
     elif alg_name == "FedProx":

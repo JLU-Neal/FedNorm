@@ -23,7 +23,9 @@ MODEL=$1 # graphsage
 FL_ALG=${2} # FedAvg
 DATASET=${3} # sider
 DISTRIBUTION=$4 # homo
-WORKER_NUM=$5
+IS_DATA_SHARING=$5 
+IS_FEDNORM=$6
+WORKER_NUM=$7
 
 PROCESS_NUM=`expr $WORKER_NUM + 1`
 echo $PROCESS_NUM
@@ -36,6 +38,8 @@ mpirun -np $PROCESS_NUM -hostfile ./mpi_host_file python3 main_fedavg.py \
   --dataset $DATASET \
   --partition_method $DISTRIBUTION  \
   --client_num_per_round $WORKER_NUM \
+  --is_data_sharing $IS_DATA_SHARING \
+  --SetNet $IS_FEDNORM \
 # mpirun -np $PROCESS_NUM -hostfile ./mpi_host_file python3 main_fedavg.py \
 #   --gpu_server_num $SERVER_NUM \
 #   --gpu_num_per_server $GPU_NUM_PER_SERVER \

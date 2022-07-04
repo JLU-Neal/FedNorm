@@ -7,6 +7,7 @@ class Experiment:
         self.FedAlgorithm = None
         self.Dataset = None
         self.Time = None
+        self.best_performance = None
         self.performance_by_iterations = []
 
     def setAttr(self, Model, FedAlgorithm, Dataset, Time):
@@ -14,15 +15,11 @@ class Experiment:
         self.FedAlgorithm = FedAlgorithm
         self.Dataset = Dataset
         self.Time = Time
+        
 
 class ExperimentsManager:
     def __init__(self):
         self.experiments = {}
 
 
-if os.path.exists("../../experiment_manager.pkl"):
-    with open("../../experiment_manager.pkl", "rb") as f:
-        em = pickle.load(f)
-else:
-    em = ExperimentsManager()
 experiment = Experiment()
