@@ -82,7 +82,7 @@ def create_random_split(path):
     )
 
 
-def create_non_uniform_split(args, idxs, client_number, is_train=True, is_data_sharing=True):
+def create_non_uniform_split(args, idxs, client_number, is_train=True, is_data_sharing=False):
     logging.info("create_non_uniform_split------------------------------------------")
     N = len(idxs)
     alpha = args.partition_alpha
@@ -167,7 +167,7 @@ def partition_data_by_sample_size(
         clients_idxs_test = np.array_split(test_idxs, client_number)
     else:
         clients_idxs_train = create_non_uniform_split(
-            args, train_idxs, client_number, args.is_data_sharing
+            args, train_idxs, client_number, True, is_data_sharing=args.is_data_sharing
         )
         clients_idxs_val = create_non_uniform_split(
             args, val_idxs, client_number, False
