@@ -82,6 +82,42 @@ def create_random_split(path):
     )
 
 
+# The problem is that the number of samples per client should not be uniform.
+def create_random_split_by_client(path, client_number):
+    adj_matrices, feature_matrices, labels = get_data(path)
+
+    client_ranges = []
+    for client_idx in range(client_number):
+        client_ranges.append(
+            (
+                int(client_idx * len(adj_matrices) / client_number),
+                int((client_idx + 1) * len(adj_matrices) / client_number),
+            )
+        )
+    
+    all_idxs = list(range(len(adj_matrices)))
+    random.shuffle(all_idxs)
+    adj_matrices_by_client = []
+    feature_matrices_by_client = []
+    labels_by_client = []
+    for client_idx in range(client_number):
+        adj_matrices_by_client.append(
+            [adj_matrices[all_idxs[i]] for i in range(client_ranges[client_idx][0], client_ranges[client_idx][1])]
+        )
+        feature_matrices_by_client.append(
+            [feature_matrices[all_idxs[i]] for i in range(client_ranges[client_idx][0], client_ranges[client_idx][1])]
+        )
+        labels_by_client.append(
+            [labels[all_idxs[i]] for i in range(client_ranges[client_idx][0], client_ranges[client_idx][1])]
+        )
+
+    return (
+        adj_matrices_by_client,
+        feature_matrices_by_client,
+        labels_by_client,
+    )
+
+
 def create_non_uniform_split(args, idxs, client_number, is_train=True, is_data_sharing=False):
     logging.info("create_non_uniform_split------------------------------------------")
     N = len(idxs)
@@ -268,6 +304,142 @@ def partition_data_by_sample_size(
 
     return global_data_dict, partition_dicts
 
+# First split across clients, then split across train, val, test
+def partition_data_by_sample_size_idential_distribution_across_train_val_test(
+    args, path, client_number, uniform=True, compact=True
+):
+    (
+        train_adj_matrices,
+        train_feature_matrices,
+        train_labels,
+        val_adj_matrices,
+        val_feature_matrices,
+        val_labels,
+        test_adj_matrices,
+        test_feature_matrices,
+        test_labels,
+    ) = create_random_split(path)
+
+
+    # First combine train, val, test
+    adj_matrices = train_adj_matrices + val_adj_matrices + test_adj_matrices
+    feature_matrices = train_feature_matrices + val_feature_matrices + test_feature_matrices
+    labels = train_labels + val_labels + test_labels
+
+    num_samples = len(adj_matrices)
+
+    idxs = list(range(num_samples))
+    random.shuffle(idxs)
+
+    if uniform:
+        clients_idxs = np.array_split(idxs, client_number)
+    else:
+        clients_idxs = create_non_uniform_split(
+            args, idxs, client_number, True, is_data_sharing=args.is_data_sharing
+        )
+
+    partition_dicts = [None] * client_number
+    labels_of_all_clients = []
+    for client in range(client_number):
+        client_idxs = clients_idxs[client]
+
+        idxs_len = len(client_idxs)
+
+        client_train_idxs = client_idxs[:int(idxs_len * 0.8)]
+        client_val_idxs = client_idxs[int(idxs_len * 0.8) : int(idxs_len * 0.9)]
+        client_test_idxs = client_idxs[int(idxs_len * 0.9) :]
+
+        train_adj_matrices_client = [
+            adj_matrices[idx] for idx in client_train_idxs
+        ]
+        train_feature_matrices_client = [
+            feature_matrices[idx] for idx in client_train_idxs
+        ]
+        train_labels_client = [labels[idx] for idx in client_train_idxs]
+        labels_of_all_clients.append(train_labels_client)
+
+        val_adj_matrices_client = [adj_matrices[idx] for idx in client_val_idxs]
+        val_feature_matrices_client = [
+            feature_matrices[idx] for idx in client_val_idxs
+        ]
+        val_labels_client = [labels[idx] for idx in client_val_idxs]
+
+        test_adj_matrices_client = [adj_matrices[idx] for idx in client_test_idxs]
+        test_feature_matrices_client = [
+            feature_matrices[idx] for idx in client_test_idxs
+        ]
+        test_labels_client = [labels[idx] for idx in client_test_idxs]
+
+        train_dataset_client = MoleculesDataset(
+            train_adj_matrices_client,
+            train_feature_matrices_client,
+            train_labels_client,
+            path,
+            compact=compact,
+            split="train",
+        )
+        val_dataset_client = MoleculesDataset(
+            val_adj_matrices_client,
+            val_feature_matrices_client,
+            val_labels_client,
+            path,
+            compact=compact,
+            split="val",
+        )
+        test_dataset_client = MoleculesDataset(
+            test_adj_matrices_client,
+            test_feature_matrices_client,
+            test_labels_client,
+            path,
+            compact=compact,
+            split="test",
+        )
+
+        partition_dict = {
+            "train": train_dataset_client,
+            "val": val_dataset_client,
+            "test": test_dataset_client,
+        }
+
+        partition_dicts[client] = partition_dict
+
+    # plot the label distribution similarity score
+    visualize_label_distribution_similarity_score(labels_of_all_clients)
+
+    global_data_dict = {
+        "train": MoleculesDataset(
+            train_adj_matrices,
+            train_feature_matrices,
+            train_labels,
+            path,
+            compact=compact,
+            split="train",
+        ),
+        "val": MoleculesDataset(
+            val_adj_matrices,
+            val_feature_matrices,
+            val_labels,
+            path,
+            compact=compact,
+            split="val",
+        ),
+        "test": MoleculesDataset(
+            test_adj_matrices,
+            test_feature_matrices,
+            test_labels,
+            path,
+            compact=compact,
+            split="test",
+        ),
+    }
+
+    return global_data_dict, partition_dicts
+
+
+
+    
+
+    
 
 def visualize_label_distribution_similarity_score(labels_of_all_clients):
     label_distribution_clients = []
