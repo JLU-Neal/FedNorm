@@ -82,42 +82,6 @@ def create_random_split(path):
     )
 
 
-# The problem is that the number of samples per client should not be uniform.
-def create_random_split_by_client(path, client_number):
-    adj_matrices, feature_matrices, labels = get_data(path)
-
-    client_ranges = []
-    for client_idx in range(client_number):
-        client_ranges.append(
-            (
-                int(client_idx * len(adj_matrices) / client_number),
-                int((client_idx + 1) * len(adj_matrices) / client_number),
-            )
-        )
-    
-    all_idxs = list(range(len(adj_matrices)))
-    random.shuffle(all_idxs)
-    adj_matrices_by_client = []
-    feature_matrices_by_client = []
-    labels_by_client = []
-    for client_idx in range(client_number):
-        adj_matrices_by_client.append(
-            [adj_matrices[all_idxs[i]] for i in range(client_ranges[client_idx][0], client_ranges[client_idx][1])]
-        )
-        feature_matrices_by_client.append(
-            [feature_matrices[all_idxs[i]] for i in range(client_ranges[client_idx][0], client_ranges[client_idx][1])]
-        )
-        labels_by_client.append(
-            [labels[all_idxs[i]] for i in range(client_ranges[client_idx][0], client_ranges[client_idx][1])]
-        )
-
-    return (
-        adj_matrices_by_client,
-        feature_matrices_by_client,
-        labels_by_client,
-    )
-
-
 def create_non_uniform_split(args, idxs, client_number, is_train=True, is_data_sharing=False):
     logging.info("create_non_uniform_split------------------------------------------")
     N = len(idxs)
@@ -559,7 +523,7 @@ def load_partition_data(
     normalize_features=False,
     normalize_adj=False,
 ):
-    global_data_dict, partition_dicts = partition_data_by_sample_size(
+    global_data_dict, partition_dicts = partition_data_by_sample_size_idential_distribution_across_train_val_test(
         args, path, client_number, uniform, compact=compact
     )
 
