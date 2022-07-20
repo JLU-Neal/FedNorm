@@ -298,13 +298,49 @@ def partition_data_by_sample_size_idential_distribution_across_train_val_test(
     if uniform:
         clients_idxs = np.array_split(idxs, client_number)
     else:
+        # In this case, cannot applied datasharing since the split order changed
         clients_idxs = create_non_uniform_split(
-            args, idxs, client_number, True, is_data_sharing=args.is_data_sharing
+            args, idxs, client_number, True, is_data_sharing=False
         )
 
+    # if using data sharing strategy, then generate the sharing data idxs
+    if args.is_data_sharing:
+        logging.info("data sharing strategy activated------>")
+        global_client_train_idxs = []
+        for client in range(client_number):
+            client_idxs = clients_idxs[client]
+            idxs_len = len(client_idxs)
+            client_train_idxs = client_idxs[:int(idxs_len * 0.8)]
+            global_client_train_idxs += client_train_idxs
+        N = len(global_client_train_idxs)
+        alpha = args.data_sharing_alpha
+        beta = args.data_sharing_beta
+        global_shared_dataset_size = int(N * beta)
+        global_shared_dataset = np.random.choice(global_client_train_idxs, global_shared_dataset_size, False)
+        alpha_portion_size = int (global_shared_dataset_size * alpha)
+        alpha_portion = np.random.choice(global_shared_dataset, alpha_portion_size, False).tolist()
+
+
+
+    # Then partition for each client
     partition_dicts = [None] * client_number
     labels_of_all_clients = []
+
+    global_train_adj_matrices = []
+    global_train_feature_matrices = []
+    global_train_labels = []
+
+    global_val_adj_matrices = []
+    global_val_feature_matrices = []
+    global_val_labels = []
+
+    global_test_adj_matrices = []
+    global_test_feature_matrices = []
+    global_test_labels = []
+
+
     for client in range(client_number):
+
         client_idxs = clients_idxs[client]
 
         idxs_len = len(client_idxs)
@@ -312,6 +348,9 @@ def partition_data_by_sample_size_idential_distribution_across_train_val_test(
         client_train_idxs = client_idxs[:int(idxs_len * 0.8)]
         client_val_idxs = client_idxs[int(idxs_len * 0.8) : int(idxs_len * 0.9)]
         client_test_idxs = client_idxs[int(idxs_len * 0.9) :]
+
+        if args.is_data_sharing:
+            client_train_idxs = client_train_idxs + alpha_portion
 
         train_adj_matrices_client = [
             adj_matrices[idx] for idx in client_train_idxs
@@ -333,6 +372,19 @@ def partition_data_by_sample_size_idential_distribution_across_train_val_test(
             feature_matrices[idx] for idx in client_test_idxs
         ]
         test_labels_client = [labels[idx] for idx in client_test_idxs]
+
+        # Save the global data
+        global_train_adj_matrices += train_adj_matrices_client
+        global_train_feature_matrices += train_feature_matrices_client
+        global_train_labels += train_labels_client
+
+        global_val_adj_matrices += val_adj_matrices_client
+        global_val_feature_matrices += val_feature_matrices_client
+        global_val_labels += val_labels_client
+
+        global_test_adj_matrices += test_adj_matrices_client
+        global_test_feature_matrices += test_feature_matrices_client
+        global_test_labels += test_labels_client
 
         train_dataset_client = MoleculesDataset(
             train_adj_matrices_client,
@@ -370,31 +422,34 @@ def partition_data_by_sample_size_idential_distribution_across_train_val_test(
     # plot the label distribution similarity score
     visualize_label_distribution_similarity_score(labels_of_all_clients)
 
+
+        
     global_data_dict = {
         "train": MoleculesDataset(
-            train_adj_matrices,
-            train_feature_matrices,
-            train_labels,
+            global_train_adj_matrices,
+            global_train_feature_matrices,
+            global_train_labels,
             path,
             compact=compact,
             split="train",
         ),
         "val": MoleculesDataset(
-            val_adj_matrices,
-            val_feature_matrices,
-            val_labels,
+            global_val_adj_matrices,
+            global_val_feature_matrices,
+            global_val_labels,
             path,
             compact=compact,
             split="val",
         ),
         "test": MoleculesDataset(
-            test_adj_matrices,
-            test_feature_matrices,
-            test_labels,
+            global_test_adj_matrices,
+            global_test_feature_matrices,
+            global_test_labels,
             path,
             compact=compact,
             split="test",
         ),
+       
     }
 
     return global_data_dict, partition_dicts
