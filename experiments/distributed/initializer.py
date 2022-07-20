@@ -140,7 +140,7 @@ def add_federated_args(parser):
 
     parser.add_argument('--data_sharing_beta', type=float, default=0.01)
     
-    parser.add_argument("--SetNet", type=bool, default=True, help="Whether to use SetNet")
+    parser.add_argument("--SetNet", type=int, default=1, help="Whether to use SetNet")
 
     parser.add_argument("--epochs_FedCSE", type=int, default=1, help="How many epochs to train FedCSE")
 
@@ -148,6 +148,6 @@ def add_federated_args(parser):
     
     parser.add_argument("--CSE_pretrain_rounds", type=int, default=0, help="How many rounds to pretrain FedCSE")
 
-    parser.add_argument("--is_data_sharing", type=bool, default=False, help="Whether to use data sharing")
+    parser.add_argument("--is_data_sharing", type=int, default=0, help="Whether to use data sharing")
 
     return parser

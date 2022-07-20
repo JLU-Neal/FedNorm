@@ -19,9 +19,9 @@ for model, fed_alg, dataset, datadistribution, client_num in list(itertools.prod
     logging.info("Running client num: {}".format(client_num))
     logging.info("===================================================") 
     if fed_alg == 'FedAvg':   
-        subprocess.run("sh run_fedavg_distributed_pytorch.sh".split() + [model, fed_alg, dataset, datadistribution, 'False', 'False', client_num])
+        subprocess.run("sh run_fedavg_distributed_pytorch.sh".split() + [model, fed_alg, dataset, datadistribution, '0', '0', client_num])
     elif fed_alg == 'DataSharing':
-        subprocess.run("sh run_fedavg_distributed_pytorch.sh".split() + [model, fed_alg, dataset, datadistribution, 'True', 'False', client_num])
+        subprocess.run("sh run_fedavg_distributed_pytorch.sh".split() + [model, fed_alg, dataset, datadistribution, '1', '0', client_num])
     elif fed_alg == 'FedNorm':
-        subprocess.run("sh run_fedavg_distributed_pytorch.sh".split() + [model, fed_alg, dataset, datadistribution, 'False', 'True', client_num])
+        subprocess.run("sh run_fedavg_distributed_pytorch.sh".split() + [model, fed_alg, dataset, datadistribution, '0', '1', client_num])
 
