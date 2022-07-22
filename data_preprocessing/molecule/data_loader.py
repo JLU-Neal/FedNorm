@@ -578,7 +578,7 @@ def load_partition_data(
     normalize_features=False,
     normalize_adj=False,
 ):
-    global_data_dict, partition_dicts = partition_data_by_sample_size_idential_distribution_across_train_val_test(
+    global_data_dict, partition_dicts = partition_data_by_sample_size(
         args, path, client_number, uniform, compact=compact
     )
 

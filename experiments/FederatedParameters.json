@@ -3,8 +3,8 @@
     "WORKER_NUM": 1,
     "SERVER_NUM": 1,
     "GPU_NUM_PER_SERVER": 1, 
-    "PARTITION_ALPHA": 1,
-    "ROUND": 250,
+    "PARTITION_ALPHA": 0.25,
+    "ROUND": 150,
     "EPOCH": 2,
     "BATCH_SIZE": 1
 }

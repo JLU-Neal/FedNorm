@@ -9,7 +9,7 @@
         "attention heads": null,
         "alpha": null    
     },
-    "graphsage + DataSharing on sider": 
+    "graphsage + FedAvg_DataSharing on sider": 
     { "learning rate": 0.0015, 
         "dropout rate": 0.6,
         "node embedding dimension": 16, 
@@ -19,7 +19,7 @@
         "attention heads": null,
         "alpha": null    
     },
-    "graphsage + FedNorm on sider": 
+    "graphsage + FedAvg_FedNorm on sider": 
     { "learning rate": 0.0015, 
         "dropout rate": 0.6,
         "node embedding dimension": 16, 

@@ -21,6 +21,7 @@ from model.moleculenet.sage_readout import SageMoleculeNet
 from model.moleculenet.gat_readout import GatMoleculeNet
 from model.moleculenet.gcn_readout import GcnMoleculeNet
 from training.moleculenet.sage_readout_trainer import SageMoleculeNetTrainer
+from training.moleculenet.sage_readout_trainer_origin import SageMoleculeNetTrainer as SageMoleculeNetTrainerOrigin
 from training.moleculenet.gat_readout_trainer import GatMoleculeNetTrainer
 from training.moleculenet.gcn_readout_trainer import GcnMoleculeNetTrainer
 from FedML.fedml_api.distributed.fedavg.FedAvgAPI import FedML_init
@@ -227,7 +228,10 @@ def create_model(args, model_name, feat_dim, num_cats, output_dim):
             num_cats,
             args
         )
-        trainer = SageMoleculeNetTrainer(model)
+        if args.SetNet:
+            trainer = SageMoleculeNetTrainer(model)
+        else:
+            trainer = SageMoleculeNetTrainerOrigin(model)
     elif model_name == "gat":
         model = GatMoleculeNet(
             feat_dim,
@@ -383,7 +387,7 @@ if __name__ == "__main__":
     model, trainer = create_model(args, args.model, feat_dim, num_cats, output_dim=None)
 
     # start "federated averaging (FedAvg)"
-    fl_alg = get_fl_algorithm_initializer(args.fl_algorithm)
+    fl_alg = get_fl_algorithm_initializer(args.fl_algorithm, args)
 
     try:
         fl_alg(
