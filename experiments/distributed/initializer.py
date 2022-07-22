@@ -2,7 +2,7 @@ import random
 
 import numpy as np
 import torch
-
+import argparse
 
 from FedML.fedml_api.distributed.fedavg.FedAvgAPI import FedML_FedAvg_distributed
 from FedML.fedml_api.distributed.fedopt.FedOptAPI import FedML_FedOpt_distributed
@@ -31,6 +31,18 @@ def set_seed(seed):
     torch.cuda.manual_seed_all(seed)
     np.random.seed(seed)
     random.seed(seed)
+
+
+def str2bool(v):
+    if isinstance(v, bool):
+        return v
+    if v.lower() in ('yes', 'true', 't', 'y', '1'):
+        return True
+    elif v.lower() in ('no', 'false', 'f', 'n', '0'):
+        return False
+    else:
+        raise argparse.ArgumentTypeError('Boolean value expected.')
+
 
 def add_federated_args(parser):
     """
@@ -140,7 +152,7 @@ def add_federated_args(parser):
 
     parser.add_argument('--data_sharing_beta', type=float, default=0.01)
     
-    parser.add_argument("--SetNet", type=int, default=1, help="Whether to use SetNet")
+    # parser.add_argument("--SetNet", type=int, default=1, help="Whether to use SetNet")
 
     parser.add_argument("--epochs_FedCSE", type=int, default=1, help="How many epochs to train FedCSE")
 
@@ -148,6 +160,14 @@ def add_federated_args(parser):
     
     parser.add_argument("--CSE_pretrain_rounds", type=int, default=0, help="How many rounds to pretrain FedCSE")
 
-    parser.add_argument("--is_data_sharing", type=int, default=0, help="Whether to use data sharing")
+    # parser.add_argument("--is_data_sharing", type=int, default=0, help="Whether to use data sharing")
+
+    parser.add_argument("--SetNet", type=str2bool, nargs='?',
+                        const=True, default=False,
+                        help="Activate nice mode.")
+
+    parser.add_argument("--is_data_sharing", type=str2bool, nargs='?',
+                        const=True, default=False,
+                        help="Activate nice mode.")
 
     return parser
