@@ -6,7 +6,7 @@ import logging
 
 models = ['graphsage']
 fed_algs = ['FedAvg', 'FedAvg_DataSharing', 'FedAvg_FedNorm']
-datasets = ['sider']
+datasets = ['sider', 'bbbp', 'bace', 'Tox21', 'clintox']
 data_distributions = ['hetero']
 client_nums = ['3']
 

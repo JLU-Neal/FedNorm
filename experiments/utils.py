@@ -14,7 +14,7 @@ def loadFederatedParameters():
 
 
 def setOptimalParams(args):
-    hyperParamsConfig = loadHyperParameters()[args.model + ' + ' + args.fl_algorithm + ' on ' + args.dataset]
+    hyperParamsConfig = loadHyperParameters()[args.model + ' + ' + args.fl_algorithm.split("_")[0] + ' on ' + args.dataset]
     fedParamsConfig = loadFederatedParameters()
 
     # model params
@@ -26,13 +26,13 @@ def setOptimalParams(args):
     args.graph_embedding_dim = hyperParamsConfig['graph embedding dimension']
     args.num_heads = hyperParamsConfig['attention heads']
     args.alpha = hyperParamsConfig['alpha']
+    args.partition_alpha = hyperParamsConfig['PARTITION_ALPHA']
 
     # fed params
     args.client_num_in_total = fedParamsConfig['CLIENT_NUM']
     # args.client_num_per_round = fedParamsConfig['WORKER_NUM']
     args.gpu_server_num = fedParamsConfig['SERVER_NUM']
     args.gpu_num_per_server = fedParamsConfig['GPU_NUM_PER_SERVER']
-    args.partition_alpha = fedParamsConfig['PARTITION_ALPHA']
     args.comm_round = fedParamsConfig['ROUND']
     args.epochs = fedParamsConfig['EPOCH']
     args.batch_size = fedParamsConfig['BATCH_SIZE']

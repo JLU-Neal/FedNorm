@@ -7,26 +7,59 @@
         "readout embedding dimension": 64,
         "graph embedding dimension": 64,
         "attention heads": null,
-        "alpha": null    
+        "alpha": null,
+        "PARTITION_ALPHA": 0.2    
     },
-    "graphsage + FedAvg_DataSharing on sider": 
+
+
+    "graphsage + FedAvg on bbbp": 
     { "learning rate": 0.0015, 
         "dropout rate": 0.6,
+        "node embedding dimension": 64, 
+        "hidden layer dimension": 64,
+        "readout embedding dimension": 64,
+        "graph embedding dimension": 64,
+        "attention heads": null,
+        "alpha": null,
+        "PARTITION_ALPHA": 2     
+    },
+    
+    
+    "graphsage + FedAvg on bace": 
+    { "learning rate": 0.0015, 
+        "dropout rate": 0.5,
         "node embedding dimension": 16, 
         "hidden layer dimension": 64,
         "readout embedding dimension": 64,
         "graph embedding dimension": 64,
         "attention heads": null,
-        "alpha": null    
+        "alpha": null,
+        "PARTITION_ALPHA": 0.5     
     },
-    "graphsage + FedAvg_FedNorm on sider": 
+
+
+    "graphsage + FedAvg on Tox21": 
     { "learning rate": 0.0015, 
         "dropout rate": 0.6,
-        "node embedding dimension": 16, 
+        "node embedding dimension": 64, 
         "hidden layer dimension": 64,
         "readout embedding dimension": 64,
         "graph embedding dimension": 64,
         "attention heads": null,
-        "alpha": null    
+        "alpha": null,
+        "PARTITION_ALPHA": 3     
+    },
+
+    
+    "graphsage + FedAvg on clintox": 
+    { "learning rate": 0.0015, 
+        "dropout rate": 0.6,
+        "node embedding dimension": 64, 
+        "hidden layer dimension": 64,
+        "readout embedding dimension": 64,
+        "graph embedding dimension": 64,
+        "attention heads": null,
+        "alpha": null,
+        "PARTITION_ALPHA": 0.5     
     }
 }
