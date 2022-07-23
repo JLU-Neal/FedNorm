@@ -152,13 +152,13 @@ def add_args(parser):
 def load_data(args, dataset_name):
     if (
         (args.dataset != "sider")
-        and (args.dataset != "ClinTox")
-        and (args.dataset != "BBPB")
-        and (args.dataset != "BACE")
-        and (args.dataset != "PCBA")
+        and (args.dataset != "clintox")
+        and (args.dataset != "bbbp")
+        and (args.dataset != "bace")
+        and (args.dataset != "pcba")
         and (args.dataset != "Tox21")
-        and (args.dataset != "MUV")
-        and (args.dataset != "HIV")
+        and (args.dataset != "muv")
+        and (args.dataset != "hiv")
     ):
         raise Exception("no such dataset!")
 
@@ -229,7 +229,7 @@ def create_model(args, model_name, feat_dim, num_cats, output_dim):
             args
         )
         if args.SetNet:
-            trainer = SageMoleculeNetTrainer(model)
+            trainer = SageMoleculeNetTrainer(model, SetNet_input_dim=feat_dim+args.node_embedding_dim)
         else:
             trainer = SageMoleculeNetTrainerOrigin(model)
     elif model_name == "gat":

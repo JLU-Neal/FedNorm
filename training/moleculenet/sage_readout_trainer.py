@@ -20,11 +20,11 @@ from model.moleculenet.sage_readout import GraphSage, SageMoleculeNet
 
 
 class SageMoleculeNetTrainer(ModelTrainer):
-    def __init__(self, model:SageMoleculeNet, args=None):
+    def __init__(self, model:SageMoleculeNet, args=None, SetNet_input_dim=None):
         super().__init__(model, args)
         
         self.graph_model = copy.deepcopy(model.sage)
-        self.setnet = SetNet()
+        self.setnet = SetNet(channel=SetNet_input_dim)
         self.test_data = None
         self.best_score = 0
 

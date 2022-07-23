@@ -4,13 +4,10 @@ import torch.nn.functional as F
 from FedCovariateShiftEstimating.SetEncoders import PointNetEncoder, feature_transform_reguliarzer
 
 class SetNet(nn.Module):
-    def __init__(self, k=6, normal_channel=True):
+    def __init__(self, k=6, channel=24):
         super(SetNet, self).__init__()
-        if normal_channel:
-            channel = 24
-        else:
-            channel = 24
-        self.feat = PointNetEncoder(global_feat=True, feature_transform=True, channel=channel)
+        self.channel = channel
+        self.feat = PointNetEncoder(global_feat=True, feature_transform=True, channel=self.channel)
         self.fc1 = nn.Linear(1024, 512)
         self.fc2 = nn.Linear(512, 256)
         self.fc3 = nn.Linear(256, k)

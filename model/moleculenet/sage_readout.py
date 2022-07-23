@@ -102,17 +102,17 @@ class Readout_with_SetNet(Readout):
     This module inherited from Readout, with an extra SetNet to learn the covariate shift of current client
     """
 
-    def __init__(self, attr_dim, embedding_dim, hidden_dim, output_dim, num_cats, args=None):
+    def __init__(self, attr_dim, embedding_dim, hidden_dim, output_dim, num_cats, args=None, z_dim=24):
         super(Readout_with_SetNet, self).__init__(attr_dim, embedding_dim, hidden_dim, output_dim, num_cats)
         self.setnet = SetNet()
         x_dim = 1024
         h_dim1 = 128
         h_dim2 = 128
-        z_dim = 24
+        self.z_dim = z_dim
         self.fc1 = nn.Linear(x_dim, h_dim1)
         self.fc2 = nn.Linear(h_dim1, h_dim2)
-        self.fc31 = nn.Linear(h_dim2, z_dim)
-        self.fc32 = nn.Linear(h_dim2, z_dim)
+        self.fc31 = nn.Linear(h_dim2, self.z_dim)
+        self.fc32 = nn.Linear(h_dim2, self.z_dim)
 
     def encoder(self, x):
         h = F.relu(self.fc1(x))
@@ -196,7 +196,8 @@ class SageMoleculeNet(nn.Module):
                 readout_hidden_dim,
                 graph_embedding_dim,
                 num_categories,
-                args
+                args,
+                z_dim=feat_dim+node_embedding_dim
             )
 
     def forward(self, forest, feature_matrix, set_feat=None):
