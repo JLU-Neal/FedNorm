@@ -28,7 +28,6 @@ class SageMoleculeNetTrainer(ModelTrainer):
         self.test_data = None
         self.best_score = 0
 
-
     def get_model_params(self):
         return self.model.cpu().state_dict()
 
@@ -41,7 +40,7 @@ class SageMoleculeNetTrainer(ModelTrainer):
 
     def set_cse_params(self, graphmodel_params, setnet_params):
         logging.info("----------set_cse_params--------")
-        self.graph_model = copy.deepcopy(self.model.sage)
+        self.graph_model.load_state_dict(graphmodel_params)
         self.setnet.load_state_dict(setnet_params)
 
     def train(self, train_data, device, args, client_index=1):
@@ -217,11 +216,16 @@ class SageMoleculeNetTrainer(ModelTrainer):
             if np.all(truth == 0.0) or np.all(truth == 1.0):
                 results.append(float("nan"))
             else:
+                score = None
                 if args.metric == "prc-auc":
                     precision, recall, _ = precision_recall_curve(truth, pred)
                     score = auc(recall, precision)
                 else:
-                    score = roc_auc_score(truth, pred)
+                    try:
+                        score = roc_auc_score(truth, pred)
+                    except ValueError:
+                        logging.info("truth = {}".format(truth))
+                        logging.info("pred = {}".format(pred))
 
                 results.append(score)
 
@@ -287,6 +291,8 @@ class SageMoleculeNetTrainer(ModelTrainer):
         avg_score = np.average(score_list, weights=client_weights)
         if avg_score > self.best_score:
             self.best_score = avg_score
+            self.graph_model = copy.deepcopy(self.model.sage)
+            logging.info("graph_model updated")
         
         # avg_score = np.mean(np.array(score_list))
         logging.info("Test ROC-AUC Score = {}".format(avg_score))
