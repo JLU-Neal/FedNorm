@@ -1,3 +1,4 @@
+import logging
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -135,6 +136,11 @@ class Readout_with_SetNet(Readout):
 
         # Affine Transformation
         combined_rep = self.transform(combined_rep, mu, log_var)
+        try:
+            assert not torch.isnan(combined_rep).any()
+        except AssertionError:
+            logging.info("combined_rep: {}".format(combined_rep))
+            raise AssertionError("NaN in combined_rep")
 
         # Generate final graph level embedding
         hidden_rep = self.act(self.layer1(combined_rep))
