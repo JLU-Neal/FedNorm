@@ -1,4 +1,5 @@
 import argparse
+from audioop import avg
 from cmath import log
 import networkx as nx
 import os
@@ -8,6 +9,8 @@ import numpy
 from scipy.stats import norm, kurtosis, ttest_1samp
 import logging
 import random
+
+from sklearn.exceptions import EfficiencyWarning
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.getcwd(), "./../../../")))
 sys.path.insert(0, os.path.abspath(os.path.join(os.getcwd(), "")))
@@ -84,6 +87,24 @@ def analysis_avg_shortest_path_length(graphs: list, popmean: float):
     return avg_len, p_value
 
 
+def local_effciency(graphs: list):
+    effciency_each_graph = []
+    for graph in graphs:
+        effciency_each_graph.append(nx.local_efficiency(graph))
+
+    avg_effciency = sum(effciency_each_graph) / len(effciency_each_graph)
+
+    return effciency_each_graph, avg_effciency
+
+def analysis_local_efficiency(graphs: list, popmean: float):
+    effciency_each_graph, avg_effciency = local_effciency(graphs)
+    
+    # t-test for local efficiency
+    stattistic, p_value = ttest_1samp(effciency_each_graph, popmean)
+
+    return avg_effciency, p_value
+
+
 def visualize_graph(graph: nx.Graph):
     subax1 = plt.subplot(121)
     nx.draw(graph, with_labels=True, font_weight='bold')
@@ -108,16 +129,19 @@ if __name__ == "__main__":
     graphs_chunked = [graphs[i:i+chunk_size] for i in range(0, len(graphs), chunk_size)]
 
 
-    popmean_degree = degree_distribution(graphs)[1]
-    popmean_avg_shortest_path_length = avg_shortest_path_length(graphs)[1]
+    # popmean_degree = degree_distribution(graphs)[1]
+    # popmean_avg_shortest_path_length = avg_shortest_path_length(graphs)[1]
+    popmean_local_efficiency = local_effciency(graphs)[1]
     for idx in range(chunk_num):
         graphs_sublist = graphs_chunked[idx]
 
         # kur, p_value_deg_dis = analysis_degree_distribution(graphs_sublist, popmean_degree)
         # print("kurtosis: {}, p-value: {}".format(kur, p_value_deg_dis))
 
-        avg_path_len, p_value_avg_len = analysis_avg_shortest_path_length(graphs_sublist, popmean_avg_shortest_path_length)
-        print("avg shortest path length: {}, p-value: {}".format(avg_path_len, p_value_avg_len))
+        # avg_path_len, p_value_avg_len = analysis_avg_shortest_path_length(graphs_sublist, popmean_avg_shortest_path_length)
+        # print("avg shortest path length: {}, p-value: {}".format(avg_path_len, p_value_avg_len))
     
+        avg_effciency, p_value_local_eff = analysis_local_efficiency(graphs_sublist, popmean_local_efficiency)
+        print("avg local efficiency: {}, p-value: {}".format(avg_effciency, p_value_local_eff))
     pass
 
