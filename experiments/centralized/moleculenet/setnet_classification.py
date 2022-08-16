@@ -1,3 +1,4 @@
+from ensurepip import bootstrap
 import sys
 import os
 import argparse
@@ -5,6 +6,8 @@ import torch
 import numpy as np
 import random
 import matplotlib.pyplot as plt
+import logging
+import pickle
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.getcwd(), "./../../../")))
 sys.path.insert(0, os.path.abspath(os.path.join(os.getcwd(), "")))
@@ -22,7 +25,7 @@ def set_seed(seed):
     np.random.seed(seed)
     random.seed(seed)
 
-def test(use_best_model : bool):
+def test(use_best_model : bool, seed : int):
     # parse python script input parameters
     parser = argparse.ArgumentParser()
     args = add_args(parser)
@@ -34,7 +37,7 @@ def test(use_best_model : bool):
     
     args.use_best_model = use_best_model
 
-    set_seed(0)
+    set_seed(seed)
 
     dataset, feat_dim, num_cats = load_data(args, args.dataset)
     [
@@ -144,11 +147,43 @@ def test(use_best_model : bool):
     return loss_by_epoch
 
 if __name__ == "__main__":
-    loss_by_epoch_bootstrap = test(use_best_model=True)
-    loss_by_epoch_no_bootstrap = test(use_best_model=False)
+    if os.path.exists("./bootstrap_experiments.pkl") and os.path.exists("./non_bootstrap_experiments.pkl"):
+        with open("./bootstrap_experiments.pkl", "rb") as f:
+            bootstrap_experiments = pickle.load(f)
+        logging.info("Loaded bootstrap experiments")
+        with open("./non_bootstrap_experiments.pkl", "rb") as f:
+            non_bootstrap_experiments = pickle.load(f)
+        logging.info("Loaded non_bootstrap experiments")
+    else:
+        bootstrap_experiments = []
+        non_bootstrap_experiments = []
+        exp_time= 10
+        for i in range(exp_time):
+            loss_by_epoch_bootstrap = test(use_best_model=True, seed=i)
+            loss_by_epoch_no_bootstrap = test(use_best_model=False, seed=i)
+            bootstrap_experiments.append(loss_by_epoch_bootstrap)
+            non_bootstrap_experiments.append(loss_by_epoch_no_bootstrap)
+            with open("./bootstrap_experiments.pkl", "wb") as f:
+                pickle.dump(bootstrap_experiments, f)
+            with open("./non_bootstrap_experiments.pkl", "wb") as f:
+                pickle.dump(non_bootstrap_experiments, f)
+            logging.info("Saved experiments")
+    
+    bootstrap_experiments = np.array(bootstrap_experiments)
+    avg_bootstrap_experiments = np.mean(bootstrap_experiments, axis=0)
+    std_bootstrap_experiments = np.std(bootstrap_experiments, axis=0)
+
+    non_bootstrap_experiments = np.array(non_bootstrap_experiments)
+    avg_non_bootstrap_experiments = np.mean(non_bootstrap_experiments, axis=0)
+    std_non_bootstrap_experiments = np.std(non_bootstrap_experiments, axis=0)
+
+    
     # visualize the loss curve
     plt.clf()
-    plt.plot(loss_by_epoch_bootstrap, label="bootstrap")
-    plt.plot(loss_by_epoch_no_bootstrap, label="no bootstrap")
+    plt.plot(avg_bootstrap_experiments, label="bootstrap")
+    plt.fill_between(range(len(avg_bootstrap_experiments)), avg_bootstrap_experiments - std_bootstrap_experiments, avg_bootstrap_experiments + std_bootstrap_experiments, alpha=0.2)
+
+    plt.plot(avg_non_bootstrap_experiments, label="no bootstrap")
+    plt.fill_between(range(len(avg_non_bootstrap_experiments)), avg_non_bootstrap_experiments - std_non_bootstrap_experiments, avg_non_bootstrap_experiments + std_non_bootstrap_experiments, alpha=0.2)
     plt.legend()
     plt.savefig("./loss_curve.png")
