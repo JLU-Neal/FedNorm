@@ -2,6 +2,9 @@ import sys
 import os
 import argparse
 import torch
+import numpy as np
+import random
+import matplotlib.pyplot as plt
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.getcwd(), "./../../../")))
 sys.path.insert(0, os.path.abspath(os.path.join(os.getcwd(), "")))
@@ -10,7 +13,16 @@ from experiments.utils import setOptimalParams
 from model.moleculenet.sage_readout import GraphSage, SageMoleculeNet
 from FedCovariateShiftEstimating.SetNet_cls import SetNet, get_loss
 
-def main():
+
+def set_seed(seed):
+    torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark = False
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)
+    np.random.seed(seed)
+    random.seed(seed)
+
+def test(use_best_model : bool):
     # parse python script input parameters
     parser = argparse.ArgumentParser()
     args = add_args(parser)
@@ -18,8 +30,11 @@ def main():
     # adopt the optimal settings
     args = setOptimalParams(args)
     # args.data_dir = "./data/moleculenet"
-    args.SetNet=False
+    args.SetNet=True
+    
+    args.use_best_model = use_best_model
 
+    set_seed(0)
 
     dataset, feat_dim, num_cats = load_data(args, args.dataset)
     [
@@ -47,7 +62,8 @@ def main():
             num_cats,
             args
         )
-        model.load_state_dict(torch.load("./best_graph_sage_model.pt"))
+        if args.use_best_model:
+            model.load_state_dict(torch.load("./best_graph_sage_model.pt"))
         graph_model = model.sage
     except:
         graph_model = GraphSage(
@@ -64,11 +80,19 @@ def main():
     set_net = SetNet()
     graph_model.to(device)
     set_net.to(device)
-    graph_model.eval()
+    if args.use_best_model:
+        graph_model.eval()
+    else:
+        graph_model.train()
     set_net.train()
-    CSE_optimizer = torch.optim.Adam(list(set_net.parameters()), lr=1e-4)
+    if args.use_best_model:
+        CSE_optimizer = torch.optim.Adam(list(set_net.parameters()), lr=1e-4)
+    else:
+        CSE_optimizer = torch.optim.Adam(list(set_net.parameters()) + list(graph_model.parameters()), lr=1e-4)
+        # CSE_optimizer = torch.optim.Adam(list(set_net.parameters()), lr=1e-4)
     CSE_criterion = get_loss().to(device)
-    for epoch in range(1000):
+    loss_by_epoch = []
+    for epoch in range(100):
         graph_feat_list = []
         CSE_optimizer.zero_grad()
         mean_correct = []
@@ -89,7 +113,10 @@ def main():
                     for level in forest
                 ]
                 feature_matrix = feature_matrix.to(device=device, dtype=torch.float, non_blocking=True)
-                with torch.no_grad():
+                if args.use_best_model:
+                    with torch.no_grad():
+                        node_embeddings = graph_model(forest, feature_matrix)
+                else:
                     node_embeddings = graph_model(forest, feature_matrix)
                 # Concat initial node attributed with embeddings from sage
                 graph_feat = torch.cat((feature_matrix, node_embeddings), dim=1) 
@@ -111,7 +138,17 @@ def main():
         print(target)
         correct = pred_choice.eq(target.long().data).cpu().sum() / len(target)  
         print("Epoch: {}, Loss: {}, Correct: {}".format(epoch, loss_cse.item(), correct))
+        loss_by_epoch.append(loss_cse.item())
         mean_correct.append(correct)
         CSE_optimizer.step()
+    return loss_by_epoch
 
-main()
+if __name__ == "__main__":
+    loss_by_epoch_bootstrap = test(use_best_model=True)
+    loss_by_epoch_no_bootstrap = test(use_best_model=False)
+    # visualize the loss curve
+    plt.clf()
+    plt.plot(loss_by_epoch_bootstrap, label="bootstrap")
+    plt.plot(loss_by_epoch_no_bootstrap, label="no bootstrap")
+    plt.legend()
+    plt.savefig("./loss_curve.png")
