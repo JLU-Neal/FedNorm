@@ -51,7 +51,7 @@ class SageMoleculeNetTrainer(ModelTrainer):
             set_net.to(device)
             graph_model.eval()
             set_net.train()
-            CSE_optimizer = torch.optim.Adam(list(set_net.parameters()), lr=args.lr)
+            CSE_optimizer = torch.optim.Adam(list(set_net.parameters()), lr=args.cse_lr)
             CSE_criterion = get_loss().to(device)
         model = self.model
 
