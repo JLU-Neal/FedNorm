@@ -36,5 +36,6 @@ def setOptimalParams(args):
     args.comm_round = fedParamsConfig['ROUND']
     args.epochs = fedParamsConfig['EPOCH']
     args.batch_size = fedParamsConfig['BATCH_SIZE']
+    args.cse_lr = fedParamsConfig['CSE_LEARNING_RATE']
 
     return args

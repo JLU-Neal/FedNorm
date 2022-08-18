@@ -170,4 +170,7 @@ def add_federated_args(parser):
                         const=True, default=False,
                         help="Activate nice mode.")
 
+
+    parser.add_argument("--cse_lr", type=float, default=0.0015, help="CSE learning rate")
+
     return parser

@@ -8,7 +8,7 @@
         "graph embedding dimension": 64,
         "attention heads": null,
         "alpha": null,
-        "PARTITION_ALPHA": 0.2    
+        "PARTITION_ALPHA": 2    
     },
 
 
