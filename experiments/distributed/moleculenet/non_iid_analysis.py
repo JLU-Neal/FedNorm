@@ -156,8 +156,10 @@ if __name__ == "__main__":
     p_value_deg_dis_list = []
     p_value_avg_shortest_path_length_list = []
     p_value_local_efficiency_list = []
-    p_value_label_list = []
+    # p_value_label_list = []
     for chunk_idx in range(chunk_num):
+        print("chunk_idx: ", chunk_idx)
+        print("========================================================")
         graphs_sublist = [graphs[graph_idx] for graph_idx in all_idxs_chunked[chunk_idx]]
         label_sublist = [labels[label_idx] for label_idx in all_idxs_chunked[chunk_idx]]
 
@@ -173,14 +175,14 @@ if __name__ == "__main__":
         print("avg local efficiency: {}, p-value: {}".format(avg_effciency, p_value_local_eff))
         p_value_local_efficiency_list.append(p_value_local_eff)
 
-        avg_label, p_value_label = analysis_label_distribution(label_sublist, popmean_label)
-        print("avg label: {}, p-value: {}".format(avg_label, p_value_label))
-        p_value_label_list.append(p_value_label)
+        # avg_label, p_value_label = analysis_label_distribution(label_sublist, popmean_label)
+        # print("avg label: {}, p-value: {}".format(avg_label, p_value_label))
+        # p_value_label_list.append(p_value_label)
 
     avg_p_value_deg_dis = sum(p_value_deg_dis_list) / len(p_value_deg_dis_list)
     avg_p_value_avg_shortest_path_length = sum(p_value_avg_shortest_path_length_list) / len(p_value_avg_shortest_path_length_list)
     avg_p_value_local_efficiency = sum(p_value_local_efficiency_list) / len(p_value_local_efficiency_list)
-    avg_p_value_label = sum(p_value_label_list) / len(p_value_label_list)
-    print("avg p-value degree distribution: {}, avg p-value avg shortest path length: {}, avg p-value local efficiency: {}, avg p-value label: {}".format(avg_p_value_deg_dis, avg_p_value_avg_shortest_path_length, avg_p_value_local_efficiency, avg_p_value_label))
+    # avg_p_value_label = sum(p_value_label_list) / len(p_value_label_list)
+    print("avg p-value degree distribution: {}, avg p-value avg shortest path length: {}, avg p-value local efficiency: {}".format(avg_p_value_deg_dis, avg_p_value_avg_shortest_path_length, avg_p_value_local_efficiency))
     pass
 

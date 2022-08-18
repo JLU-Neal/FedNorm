@@ -128,7 +128,7 @@ def create_non_uniform_split(args, idxs, client_number, is_train=True, is_data_s
         plt.ylabel("number of clients")
         fig_name = "x_hist.png"
         fig_dir = os.path.join("./visualization", fig_name)
-        plt.savefig(fig_dir)
+        # plt.savefig(fig_dir)
     return idx_batch_per_client
 
 
