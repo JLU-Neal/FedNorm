@@ -183,7 +183,10 @@ if __name__ == "__main__":
     plt.plot(avg_bootstrap_experiments, label="bootstrap")
     plt.fill_between(range(len(avg_bootstrap_experiments)), avg_bootstrap_experiments - std_bootstrap_experiments, avg_bootstrap_experiments + std_bootstrap_experiments, alpha=0.2)
 
-    plt.plot(avg_non_bootstrap_experiments, label="no bootstrap")
+    plt.plot(avg_non_bootstrap_experiments, label="non-bootstrap")
     plt.fill_between(range(len(avg_non_bootstrap_experiments)), avg_non_bootstrap_experiments - std_non_bootstrap_experiments, avg_non_bootstrap_experiments + std_non_bootstrap_experiments, alpha=0.2)
+    
+    plt.xlabel("Epoch")
+    plt.ylabel("Loss")
     plt.legend()
     plt.savefig("./loss_curve.png")
