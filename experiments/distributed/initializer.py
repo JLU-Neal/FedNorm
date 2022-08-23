@@ -173,4 +173,6 @@ def add_federated_args(parser):
 
     parser.add_argument("--cse_lr", type=float, default=0.0015, help="CSE learning rate")
 
+    parser.add_argument("--p_alpha_factor", type=float, default=1, help="Partition alpha factor")
+
     return parser
