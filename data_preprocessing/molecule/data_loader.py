@@ -4,6 +4,7 @@ import os
 import pickle
 import random
 from math import log2
+from turtle import color
 
 import matplotlib.pyplot as plt
 import seaborn as sns
@@ -85,10 +86,11 @@ def create_random_split(path):
 def create_non_uniform_split(args, idxs, client_number, is_train=True, is_data_sharing=False):
     logging.info("create_non_uniform_split------------------------------------------")
     N = len(idxs)
-    alpha = args.partition_alpha
     logging.info("sample number (global shared data not count) = %d, client_number = %d" % (N, client_number))
-    logging.info(idxs)
+    # logging.info(idxs)
     if is_data_sharing:
+        # set seed for reproducibility
+        np.random.seed(client_number)
         logging.info("data sharing strategy activated------>")
         alpha = args.data_sharing_alpha
         beta = args.data_sharing_beta
@@ -102,9 +104,9 @@ def create_non_uniform_split(args, idxs, client_number, is_train=True, is_data_s
         idx_batch_per_client,
         min_size,
     ) = partition_class_samples_with_dirichlet_distribution(
-        N, alpha, client_number, idx_batch_per_client, idxs
+        N, args.partition_alpha, client_number, idx_batch_per_client, idxs
     )
-    logging.info(idx_batch_per_client)
+    # logging.info(idx_batch_per_client)
     sample_num_distribution = []
 
     for client_id in range(client_number):
@@ -122,13 +124,15 @@ def create_non_uniform_split(args, idxs, client_number, is_train=True, is_data_s
     # plot the (#client, #sample) distribution
     if is_train:
         logging.info(sample_num_distribution)
-        plt.hist(sample_num_distribution)
+        labels = [str(i) for i in range(client_number)]
+        plt.bar(range(client_number), sample_num_distribution, tick_label=labels, color=[c for c in ['royalblue', 'olivedrab', 'lightcoral', 'turquoise', 'm', 'y', 'k'][:client_number]])
         plt.title("Sample Number Distribution")
-        plt.xlabel("number of samples")
-        plt.ylabel("number of clients")
-        fig_name = "x_hist.png"
+        plt.xlabel("Index of Clients")
+        plt.ylabel("Number of Samples")
+        
+        fig_name = str(args.fl_algorithm)+"_"+str(args.dataset) + "_sample_num_distribution_" + str(client_number) + "clients_alpha" + str(args.partition_alpha) + ".png"
         fig_dir = os.path.join("./visualization", fig_name)
-        # plt.savefig(fig_dir)
+        plt.savefig(fig_dir)
     return idx_batch_per_client
 
 
@@ -237,7 +241,7 @@ def partition_data_by_sample_size(
         partition_dicts[client] = partition_dict
 
     # plot the label distribution similarity score
-    visualize_label_distribution_similarity_score(labels_of_all_clients)
+    visualize_label_distribution_similarity_score(labels_of_all_clients, args)
 
     global_data_dict = {
         "train": MoleculesDataset(
@@ -268,199 +272,13 @@ def partition_data_by_sample_size(
 
     return global_data_dict, partition_dicts
 
-# First split across clients, then split across train, val, test
-def partition_data_by_sample_size_idential_distribution_across_train_val_test(
-    args, path, client_number, uniform=True, compact=True
-):
-    (
-        train_adj_matrices,
-        train_feature_matrices,
-        train_labels,
-        val_adj_matrices,
-        val_feature_matrices,
-        val_labels,
-        test_adj_matrices,
-        test_feature_matrices,
-        test_labels,
-    ) = create_random_split(path)
-
-
-    # First combine train, val, test
-    adj_matrices = train_adj_matrices + val_adj_matrices + test_adj_matrices
-    feature_matrices = train_feature_matrices + val_feature_matrices + test_feature_matrices
-    labels = train_labels + val_labels + test_labels
-
-    num_samples = len(adj_matrices)
-
-    idxs = list(range(num_samples))
-    random.shuffle(idxs)
-
-    if uniform:
-        clients_idxs = np.array_split(idxs, client_number)
-    else:
-        # In this case, cannot applied datasharing since the split order changed
-        clients_idxs = create_non_uniform_split(
-            args, idxs, client_number, True, is_data_sharing=False
-        )
-
-    # if using data sharing strategy, then generate the sharing data idxs
-    if args.is_data_sharing:
-        logging.info("data sharing strategy activated------>")
-        global_client_train_idxs = []
-        for client in range(client_number):
-            client_idxs = clients_idxs[client]
-            idxs_len = len(client_idxs)
-            client_train_idxs = client_idxs[:int(idxs_len * 0.8)]
-            global_client_train_idxs += client_train_idxs
-        N = len(global_client_train_idxs)
-        alpha = args.data_sharing_alpha
-        beta = args.data_sharing_beta
-        global_shared_dataset_size = int(N * beta)
-        global_shared_dataset = np.random.choice(global_client_train_idxs, global_shared_dataset_size, False)
-        alpha_portion_size = int (global_shared_dataset_size * alpha)
-        alpha_portion = np.random.choice(global_shared_dataset, alpha_portion_size, False).tolist()
-
-
-
-    # Then partition for each client
-    partition_dicts = [None] * client_number
-    labels_of_all_clients = []
-
-    global_train_adj_matrices = []
-    global_train_feature_matrices = []
-    global_train_labels = []
-
-    global_val_adj_matrices = []
-    global_val_feature_matrices = []
-    global_val_labels = []
-
-    global_test_adj_matrices = []
-    global_test_feature_matrices = []
-    global_test_labels = []
-
-
-    for client in range(client_number):
-
-        client_idxs = clients_idxs[client]
-
-        idxs_len = len(client_idxs)
-
-        client_train_idxs = client_idxs[:int(idxs_len * 0.8)]
-        client_val_idxs = client_idxs[int(idxs_len * 0.8) : int(idxs_len * 0.9)]
-        client_test_idxs = client_idxs[int(idxs_len * 0.9) :]
-
-        if args.is_data_sharing:
-            client_train_idxs = client_train_idxs + alpha_portion
-
-        train_adj_matrices_client = [
-            adj_matrices[idx] for idx in client_train_idxs
-        ]
-        train_feature_matrices_client = [
-            feature_matrices[idx] for idx in client_train_idxs
-        ]
-        train_labels_client = [labels[idx] for idx in client_train_idxs]
-        labels_of_all_clients.append(train_labels_client)
-
-        val_adj_matrices_client = [adj_matrices[idx] for idx in client_val_idxs]
-        val_feature_matrices_client = [
-            feature_matrices[idx] for idx in client_val_idxs
-        ]
-        val_labels_client = [labels[idx] for idx in client_val_idxs]
-
-        test_adj_matrices_client = [adj_matrices[idx] for idx in client_test_idxs]
-        test_feature_matrices_client = [
-            feature_matrices[idx] for idx in client_test_idxs
-        ]
-        test_labels_client = [labels[idx] for idx in client_test_idxs]
-
-        # Save the global data
-        global_train_adj_matrices += train_adj_matrices_client
-        global_train_feature_matrices += train_feature_matrices_client
-        global_train_labels += train_labels_client
-
-        global_val_adj_matrices += val_adj_matrices_client
-        global_val_feature_matrices += val_feature_matrices_client
-        global_val_labels += val_labels_client
-
-        global_test_adj_matrices += test_adj_matrices_client
-        global_test_feature_matrices += test_feature_matrices_client
-        global_test_labels += test_labels_client
-
-        train_dataset_client = MoleculesDataset(
-            train_adj_matrices_client,
-            train_feature_matrices_client,
-            train_labels_client,
-            path,
-            compact=compact,
-            split="train",
-        )
-        val_dataset_client = MoleculesDataset(
-            val_adj_matrices_client,
-            val_feature_matrices_client,
-            val_labels_client,
-            path,
-            compact=compact,
-            split="val",
-        )
-        test_dataset_client = MoleculesDataset(
-            test_adj_matrices_client,
-            test_feature_matrices_client,
-            test_labels_client,
-            path,
-            compact=compact,
-            split="test",
-        )
-
-        partition_dict = {
-            "train": train_dataset_client,
-            "val": val_dataset_client,
-            "test": test_dataset_client,
-        }
-
-        partition_dicts[client] = partition_dict
-
-    # plot the label distribution similarity score
-    visualize_label_distribution_similarity_score(labels_of_all_clients)
-
-
-        
-    global_data_dict = {
-        "train": MoleculesDataset(
-            global_train_adj_matrices,
-            global_train_feature_matrices,
-            global_train_labels,
-            path,
-            compact=compact,
-            split="train",
-        ),
-        "val": MoleculesDataset(
-            global_val_adj_matrices,
-            global_val_feature_matrices,
-            global_val_labels,
-            path,
-            compact=compact,
-            split="val",
-        ),
-        "test": MoleculesDataset(
-            global_test_adj_matrices,
-            global_test_feature_matrices,
-            global_test_labels,
-            path,
-            compact=compact,
-            split="test",
-        ),
-       
-    }
-
-    return global_data_dict, partition_dicts
-
 
 
     
 
     
 
-def visualize_label_distribution_similarity_score(labels_of_all_clients):
+def visualize_label_distribution_similarity_score(labels_of_all_clients, args):
     label_distribution_clients = []
     label_num = labels_of_all_clients[0][0]
     for client_idx in range(len(labels_of_all_clients)):
@@ -503,7 +321,9 @@ def visualize_label_distribution_similarity_score(labels_of_all_clients):
     plt.title("Label Distribution Similarity Score")
     ax = sns.heatmap(label_distribution_similarity_score_matrix, annot=True, fmt=".3f")
     # # ax.invert_yaxis()
-    # plt.show()
+    fig_name = str(args.fl_algorithm)+"_"+str(args.dataset) + "_label_distribution_similarity" + str(client_num) + "clients_alpha" + str(args.partition_alpha) + ".png"
+    fig_dir = os.path.join("./visualization", fig_name)
+    plt.savefig(fig_dir)
 
 
 # For centralized training
