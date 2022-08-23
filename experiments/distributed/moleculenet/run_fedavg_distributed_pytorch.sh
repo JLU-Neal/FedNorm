@@ -26,6 +26,7 @@ DISTRIBUTION=$4 # homo
 IS_DATA_SHARING=$5 
 IS_FEDNORM=$6
 WORKER_NUM=$7
+P_ALPHA_FACTOR=$8
 
 PROCESS_NUM=`expr $WORKER_NUM + 1`
 echo $PROCESS_NUM
@@ -40,6 +41,7 @@ mpirun -np $PROCESS_NUM -hostfile ./mpi_host_file python3 main_fedavg.py \
   --client_num_per_round $WORKER_NUM \
   --is_data_sharing $IS_DATA_SHARING \
   --SetNet $IS_FEDNORM \
+  --p_alpha_factor $P_ALPHA_FACTOR \
 # mpirun -np $PROCESS_NUM -hostfile ./mpi_host_file python3 main_fedavg.py \
 #   --gpu_server_num $SERVER_NUM \
 #   --gpu_num_per_server $GPU_NUM_PER_SERVER \

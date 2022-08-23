@@ -23,6 +23,9 @@ sh run_fedavg_distributed_pytorch.sh graphsage FedAvg sider hetero 0 1 3
 =======22/07/2022=====
 sh run_fedavg_distributed_pytorch.sh graphsage FedAvg_FedNorm sider hetero False True 3
 
+=======18/08/2022=====
+sh run_fedavg_distributed_pytorch.sh graphsage FedAvg_FedNorm sider hetero False True 3 1
+
 ##run on background
 nohup sh run_fedavg_distributed_pytorch.sh 6 1 1 1 graphsage homo 150 1 1 0.0015 256 256 0.3 256 256  sider "./../../../data/sider/" 0 > ./fedavg-graphsage.log 2>&1 &
 ```
