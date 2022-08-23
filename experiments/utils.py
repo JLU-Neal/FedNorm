@@ -3,7 +3,6 @@ import json
 
 def loadHyperParameters():
     config = json.load(open('../../OptimalHyperParameters.json'))
-    print(config)
     return config
 
 
@@ -26,7 +25,7 @@ def setOptimalParams(args):
     args.graph_embedding_dim = hyperParamsConfig['graph embedding dimension']
     args.num_heads = hyperParamsConfig['attention heads']
     args.alpha = hyperParamsConfig['alpha']
-    args.partition_alpha = hyperParamsConfig['PARTITION_ALPHA']
+    args.partition_alpha = hyperParamsConfig['PARTITION_ALPHA'] * args.p_alpha_factor
 
     # fed params
     args.client_num_in_total = fedParamsConfig['CLIENT_NUM']
