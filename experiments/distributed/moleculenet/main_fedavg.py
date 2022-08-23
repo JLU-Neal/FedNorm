@@ -381,50 +381,52 @@ if __name__ == "__main__":
         test_data_local_dict,
     ] = dataset
 
-    # create model.
-    # Note if the model is DNN (e.g., ResNet), the training will be very slow.
-    # In this case, please use our FedML distributed version (./fedml_experiments/distributed_fedavg)
-    model, trainer = create_model(args, args.model, feat_dim, num_cats, output_dim=None)
+    visualization_only = False
+    if not visualization_only:
+        # create model.
+        # Note if the model is DNN (e.g., ResNet), the training will be very slow.
+        # In this case, please use our FedML distributed version (./fedml_experiments/distributed_fedavg)
+        model, trainer = create_model(args, args.model, feat_dim, num_cats, output_dim=None)
 
-    # start "federated averaging (FedAvg)"
-    fl_alg = get_fl_algorithm_initializer(args.fl_algorithm, args)
+        # start "federated averaging (FedAvg)"
+        fl_alg = get_fl_algorithm_initializer(args.fl_algorithm, args)
 
-    try:
-        fl_alg(
-            process_id,
-            worker_number,
-            device,
-            comm,
-            model,
-            train_data_num,
-            train_data_global,
-            test_data_global,
-            data_local_num_dict,
-            train_data_local_dict,
-            test_data_local_dict,
-            args,
-            trainer,
-        )
-    except Exception as e:
-        print(e)
-        logging.info("traceback.format_exc():\n%s" % traceback.format_exc())
-
-
-    logging.info("process_id = %d, size = %d" % (process_id, worker_number))
-
+        try:
+            fl_alg(
+                process_id,
+                worker_number,
+                device,
+                comm,
+                model,
+                train_data_num,
+                train_data_global,
+                test_data_global,
+                data_local_num_dict,
+                train_data_local_dict,
+                test_data_local_dict,
+                args,
+                trainer,
+            )
+        except Exception as e:
+            print(e)
+            logging.info("traceback.format_exc():\n%s" % traceback.format_exc())
 
 
+        logging.info("process_id = %d, size = %d" % (process_id, worker_number))
 
-    # if process_id == 1:
-    #     if os.path.exists("./experiment_manager.pkl"):
-    #         with open("./experiment_manager.pkl", "rb") as f:
-    #             em = pickle.load(f)
-    #             logging.info(em)
-    #     else:
-    #         em = experiments_manager.ExperimentsManager()
-    #     em.experiments.update({args.model+args.fl_algorithm+args.dataset:experiments_manager.experiment})
-    #     print(em)
-    #     pickle.dump(em, open( "../../experiment_manager.pkl", "wb" ) )
-    #     logging.info("experiment results is saved in ../../experiment_manager.pkl")
 
-    #     post_complete_message_to_sweep_process(args)
+
+
+        # if process_id == 1:
+        #     if os.path.exists("./experiment_manager.pkl"):
+        #         with open("./experiment_manager.pkl", "rb") as f:
+        #             em = pickle.load(f)
+        #             logging.info(em)
+        #     else:
+        #         em = experiments_manager.ExperimentsManager()
+        #     em.experiments.update({args.model+args.fl_algorithm+args.dataset:experiments_manager.experiment})
+        #     print(em)
+        #     pickle.dump(em, open( "../../experiment_manager.pkl", "wb" ) )
+        #     logging.info("experiment results is saved in ../../experiment_manager.pkl")
+
+        #     post_complete_message_to_sweep_process(args)
