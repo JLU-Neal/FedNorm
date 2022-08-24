@@ -6,10 +6,11 @@ import logging
 
 models = ['graphsage']
 
-# fed_algs = ['FedAvg', 'FedAvg_DataSharing', 'FedAvg_FedNorm']
-fed_algs = ['FedAvg_FedNorm']
-# datasets = ['sider', 'bbbp', 'bace', 'Tox21', 'clintox']
-datasets = ['Tox21', 'clintox']
+# fed_algs = ['FedAvg', 'FedAvg_DataSharing', 'FedAvg_FedNorm', 'FedAMP']
+fed_algs = ['FedAMP']
+datasets = ['sider', 'bbbp', 'bace', 'Tox21', 'clintox']
+
+
 
 data_distributions = ['hetero']
 client_nums = ['3'] # should be set to 2 later
@@ -29,4 +30,5 @@ for model, fed_alg, dataset, datadistribution, client_num, p_alpha_factor in lis
         subprocess.run("sh run_fedavg_distributed_pytorch.sh".split() + [model, fed_alg, dataset, datadistribution, 'True', 'False', client_num, p_alpha_factor])
     elif fed_alg == 'FedAvg_FedNorm':
         subprocess.run("sh run_fedavg_distributed_pytorch.sh".split() + [model, fed_alg, dataset, datadistribution, 'False', 'True', client_num, p_alpha_factor])
-
+    elif fed_alg == 'FedAMP':
+        subprocess.run("sh run_fedavg_distributed_pytorch.sh".split() + [model, fed_alg, dataset, datadistribution, 'False', 'False', client_num, p_alpha_factor])
