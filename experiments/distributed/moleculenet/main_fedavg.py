@@ -307,7 +307,7 @@ if __name__ == "__main__":
     args = setOptimalParams(args)
 
     # customize the process name
-    str_process_name = "FedGraphNN:" + str(process_id)
+    str_process_name = "FedNorm:" + str(process_id)
     setproctitle.setproctitle(str_process_name)
 
     # customize the log format
