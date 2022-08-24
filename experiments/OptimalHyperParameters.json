@@ -8,7 +8,7 @@
         "graph embedding dimension": 64,
         "attention heads": null,
         "alpha": null,
-        "PARTITION_ALPHA": 0.3   
+        "PARTITION_ALPHA": 0.2 
     },
 
 
@@ -21,7 +21,7 @@
         "graph embedding dimension": 64,
         "attention heads": null,
         "alpha": null,
-        "PARTITION_ALPHA": 0.3     
+        "PARTITION_ALPHA": 0.2     
     },
     
     
@@ -34,7 +34,7 @@
         "graph embedding dimension": 64,
         "attention heads": null,
         "alpha": null,
-        "PARTITION_ALPHA": 0.3     
+        "PARTITION_ALPHA": 0.2     
     },
 
 
@@ -47,7 +47,7 @@
         "graph embedding dimension": 64,
         "attention heads": null,
         "alpha": null,
-        "PARTITION_ALPHA": 0.3     
+        "PARTITION_ALPHA": 0.2     
     },
 
     
@@ -60,6 +60,6 @@
         "graph embedding dimension": 64,
         "attention heads": null,
         "alpha": null,
-        "PARTITION_ALPHA": 0.3     
+        "PARTITION_ALPHA": 0.1     
     }
 }
