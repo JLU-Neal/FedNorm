@@ -26,6 +26,12 @@ def setOptimalParams(args):
     args.num_heads = hyperParamsConfig['attention heads']
     args.alpha = hyperParamsConfig['alpha']
     args.partition_alpha = hyperParamsConfig['PARTITION_ALPHA'] * args.p_alpha_factor
+    try:
+        args.alphaK = hyperParamsConfig['alphaK']
+        args.lamda = hyperParamsConfig['lamda']
+        args.sigma = hyperParamsConfig['sigma']
+    except:
+        pass
 
     # fed params
     args.client_num_in_total = fedParamsConfig['CLIENT_NUM']

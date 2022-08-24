@@ -1,10 +1,11 @@
 import logging
-
+import copy
 import numpy as np
 import torch
 # import wandb
 from sklearn.metrics import roc_auc_score, precision_recall_curve, auc
 from tqdm import tqdm
+from FedML.fedml_api.distributed.fedamp.utils import weight_flatten
 
 from FedML.fedml_core.trainer.model_trainer import ModelTrainer
 import experiments.experiments_manager as experiments_manager
@@ -17,19 +18,41 @@ class SageMoleculeNetTrainer(ModelTrainer):
     def __init__(self, model, args=None):
         super().__init__(model, args)
         self.best_score = 0
+        self.client_u = copy.deepcopy(self.model)
+        self.coef_self = None
+
+
+        # FedAMP parameters
+        self.alphaK = args.alphaK
+        self.lamda = args.lamda
+    
+    def set_coef_self(self, coef_self):
+        self.coef_self = coef_self
+
 
     def get_model_params(self):
         return self.model.cpu().state_dict()
 
-    def set_model_params(self, model_parameters):
+    def set_model_params(self, model_parameters, client=False):
+        
+
         logging.info("set_model_params")
+        
         self.model.load_state_dict(model_parameters)
+        if client:
+            assert self.coef_self is not None, "Coef_self is not set"
+            for new_param, old_param in zip(self.model.parameters(), self.client_u.parameters()):
+                old_param.data = (new_param.data + self.coef_self * old_param.data).clone()
+
+
+        
 
     def train(self, train_data, device, args):
         model = self.model
 
         model.to(device)
         model.train()
+        self.client_u.to(device)
 
         test_data = None
         try:
@@ -69,6 +92,12 @@ class SageMoleculeNetTrainer(ModelTrainer):
                 logits = model(forest, feature_matrix)
                 loss = criterion(logits, label) * mask
                 loss = loss.sum() / mask.sum()
+
+
+                params = weight_flatten(self.model.state_dict())
+                params_ = weight_flatten(self.client_u.state_dict())
+                sub = params - params_
+                loss += self.lamda/self.alphaK/2 * torch.dot(sub, sub)
 
                 loss.backward()
                 optimizer.step()

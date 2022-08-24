@@ -22,6 +22,7 @@ from model.moleculenet.gat_readout import GatMoleculeNet
 from model.moleculenet.gcn_readout import GcnMoleculeNet
 from training.moleculenet.sage_readout_trainer import SageMoleculeNetTrainer
 from training.moleculenet.sage_readout_trainer_origin import SageMoleculeNetTrainer as SageMoleculeNetTrainerOrigin
+from training.moleculenet.sage_readout_trainer_FedAMP import SageMoleculeNetTrainer as SageMoleculeNetTrainerFedAMP
 from training.moleculenet.gat_readout_trainer import GatMoleculeNetTrainer
 from training.moleculenet.gcn_readout_trainer import GcnMoleculeNetTrainer
 from FedML.fedml_api.distributed.fedavg.FedAvgAPI import FedML_init
@@ -230,6 +231,8 @@ def create_model(args, model_name, feat_dim, num_cats, output_dim):
         )
         if args.SetNet:
             trainer = SageMoleculeNetTrainer(model, SetNet_input_dim=feat_dim+args.node_embedding_dim)
+        elif args.fl_algorithm == "FedAMP":
+            trainer = SageMoleculeNetTrainerFedAMP(model, args)
         else:
             trainer = SageMoleculeNetTrainerOrigin(model)
     elif model_name == "gat":
