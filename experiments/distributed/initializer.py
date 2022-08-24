@@ -8,6 +8,7 @@ from FedML.fedml_api.distributed.fedavg.FedAvgAPI import FedML_FedAvg_distribute
 from FedML.fedml_api.distributed.fedavg_original.FedAvgAPI import FedML_FedAvg_distributed as FedML_FedAvg_distributed_original
 from FedML.fedml_api.distributed.fedopt.FedOptAPI import FedML_FedOpt_distributed
 from FedML.fedml_api.distributed.fedprox.FedProxAPI import FedML_FedProx_distributed
+from FedML.fedml_api.distributed.fedamp.FedAMPAPI import FedML_FedAMP_distributed
 
 def get_fl_algorithm_initializer(alg_name, args):
     if alg_name[:6] == "FedAvg":
@@ -19,6 +20,8 @@ def get_fl_algorithm_initializer(alg_name, args):
         fl_algorithm = FedML_FedOpt_distributed
     elif alg_name == "FedProx":
         fl_algorithm = FedML_FedProx_distributed
+    elif alg_name == "FedAMP":
+        fl_algorithm = FedML_FedAMP_distributed
     else:
         raise Exception("please do sanity check for this algorithm:"+alg_name)
 

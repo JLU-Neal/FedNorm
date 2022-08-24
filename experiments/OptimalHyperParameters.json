@@ -61,5 +61,17 @@
         "attention heads": null,
         "alpha": null,
         "PARTITION_ALPHA": 0.1     
+    },
+
+    "graphsage + FedAMP on sider": 
+    { "learning rate": 0.0015, 
+        "dropout rate": 0.6,
+        "node embedding dimension": 16, 
+        "hidden layer dimension": 64,
+        "readout embedding dimension": 64,
+        "graph embedding dimension": 64,
+        "attention heads": null,
+        "alpha": null,
+        "PARTITION_ALPHA": 0.2 
     }
 }
