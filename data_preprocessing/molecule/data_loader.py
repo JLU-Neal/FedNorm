@@ -280,7 +280,8 @@ def partition_data_by_sample_size(
 
 def visualize_label_distribution_similarity_score(labels_of_all_clients, args):
     label_distribution_clients = []
-    label_num = labels_of_all_clients[0][0]
+    label_num = len(labels_of_all_clients[0][0])
+    num_labels_of_all_clients = [len(labels) for labels in labels_of_all_clients]
     for client_idx in range(len(labels_of_all_clients)):
         labels_client_i = labels_of_all_clients[client_idx]
         sample_number = len(labels_client_i)
@@ -292,7 +293,7 @@ def visualize_label_distribution_similarity_score(labels_of_all_clients, args):
                 if label[property_index] == 1:
                     active_property_count[property_index] += 1
         active_property_count = [
-            float(active_property_count[i]) for i in range(len(active_property_count))
+            float(active_property_count[i]/num_labels_of_all_clients[client_idx]) for i in range(len(active_property_count))
         ]
         label_distribution_clients.append(copy.deepcopy(active_property_count))
     logging.info(label_distribution_clients)
@@ -313,11 +314,12 @@ def visualize_label_distribution_similarity_score(labels_of_all_clients, args):
 
             from scipy import spatial
 
-            distance = 1 - spatial.distance.cosine(a, b)
+            distance = 1 - (spatial.distance.euclidean(a, b))
             label_distribution_similarity_score_matrix[client_i][client_j] = distance
             label_distribution_similarity_score_matrix[client_j][client_i] = distance
         # break
     logging.info(label_distribution_similarity_score_matrix)
+    plt.clf()
     plt.title("Label Distribution Similarity Score")
     ax = sns.heatmap(label_distribution_similarity_score_matrix, annot=True, fmt=".3f")
     # # ax.invert_yaxis()
