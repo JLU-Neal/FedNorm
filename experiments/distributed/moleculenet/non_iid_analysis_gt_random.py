@@ -48,6 +48,26 @@ def list_avgDegree(graphs: list)->list:
         avgDegrees.append(avgDegree)
     return avgDegrees
 
+
+def list_shortestPathLength(graphs: list)->list:
+    avg_length_each_graph = []
+    for graph in graphs:
+        sum_avg_path = 0
+        sum_weight = 0
+        for C in (graph.subgraph(c).copy() for c in nx.connected_components(graph)):
+            ele_num = len(C.nodes)
+            #  weight is calculated based on the number of paths 
+            #  between every pair of two node in a component
+            weight = (1+ele_num) * ele_num / 2
+            sum_weight += weight
+            sum_avg_path += nx.average_shortest_path_length(C) * weight
+
+        avg_shortest_path_length = sum_avg_path / sum_weight
+        avg_length_each_graph.append(avg_shortest_path_length)
+
+    return avg_length_each_graph
+
+
 def _get_p_val(graphs_gt: list, graphs_random: list, func: callable):
     samples_gt = func(graphs_gt)
     samples_random = func(graphs_random)
@@ -67,4 +87,6 @@ if __name__ == "__main__":
     random_graphs = generate_random_graph(graphs)
 
     p_val_avgDegree = _get_p_val(graphs, random_graphs, list_avgDegree)
+
+    p_val_shortestPathLength = _get_p_val(graphs, random_graphs, list_shortestPathLength)
     pass
