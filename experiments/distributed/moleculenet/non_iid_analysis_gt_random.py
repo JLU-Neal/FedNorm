@@ -7,7 +7,7 @@ import os
 import sys
 import matplotlib.pyplot as plt
 import numpy
-from scipy.stats import norm, kurtosis, ttest_1samp
+from scipy.stats import norm, kurtosis, ttest_ind
 
 import random
 
@@ -34,8 +34,26 @@ def generate_random_graph(graphs: list)->list:
     return generated_graphs
 
 
+def list_avgDegree(graphs: list)->list:
+    avgDegrees = []
+    for graph in graphs:
+        degree_hist = nx.degree_histogram(graph)
+        # calculate the average degree
+        sum_degree = 0
+        count_degree = 0
+        for i in range(len(degree_hist)):
+            sum_degree += degree_hist[i] * i
+            count_degree += degree_hist[i]
+        avgDegree = sum_degree / count_degree
+        avgDegrees.append(avgDegree)
+    return avgDegrees
 
+def _get_p_val(graphs_gt: list, graphs_random: list, func: callable):
+    samples_gt = func(graphs_gt)
+    samples_random = func(graphs_random)
+    p_val = ttest_ind(samples_gt, samples_random).pvalue
 
+    return p_val
 
 
 if __name__ == "__main__":
@@ -47,4 +65,6 @@ if __name__ == "__main__":
     adj_matrices, feature_matrices, labels = get_data(path)
     graphs = from_matrices_to_graphs(adj_matrices)
     random_graphs = generate_random_graph(graphs)
+
+    p_val_avgDegree = _get_p_val(graphs, random_graphs, list_avgDegree)
     pass
