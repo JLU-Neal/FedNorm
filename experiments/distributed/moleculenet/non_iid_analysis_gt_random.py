@@ -68,6 +68,14 @@ def list_shortestPathLength(graphs: list)->list:
     return avg_length_each_graph
 
 
+def list_localEfficiency(graphs: list)->list:
+    local_efficiencies = []
+    for graph in graphs:
+        local_efficiencies.append(nx.local_efficiency(graph))
+    return local_efficiencies
+
+
+
 def _get_p_val(graphs_gt: list, graphs_random: list, func: callable):
     samples_gt = func(graphs_gt)
     samples_random = func(graphs_random)
@@ -89,4 +97,11 @@ if __name__ == "__main__":
     p_val_avgDegree = _get_p_val(graphs, random_graphs, list_avgDegree)
 
     p_val_shortestPathLength = _get_p_val(graphs, random_graphs, list_shortestPathLength)
+    
+    p_val_localEfficiency = _get_p_val(graphs, random_graphs, list_localEfficiency)
+    
+
+    print("p_val_avgDegree: ", p_val_avgDegree)
+    print("p_val_shortestPathLength: ", p_val_shortestPathLength)
+    print("p_val_localEfficiency: ", p_val_localEfficiency)
     pass
