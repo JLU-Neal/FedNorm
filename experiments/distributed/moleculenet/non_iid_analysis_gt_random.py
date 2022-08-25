@@ -81,27 +81,33 @@ def _get_p_val(graphs_gt: list, graphs_random: list, func: callable):
     samples_random = func(graphs_random)
     p_val = ttest_ind(samples_gt, samples_random).pvalue
 
-    return p_val
+    # avh gt and random
+
+    avg_gt = numpy.mean(samples_gt)
+    avg_random = numpy.mean(samples_random) 
+
+    return p_val, avg_gt, avg_random
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     args = add_args(parser)
 
+    datasets = ['sider', 'bbbp', 'bace', 'Tox21', 'clintox']
 
-    path = args.data_dir + args.dataset
-    adj_matrices, feature_matrices, labels = get_data(path)
-    graphs = from_matrices_to_graphs(adj_matrices)
-    random_graphs = generate_random_graph(graphs)
+    for dataset in datasets:
+        path = args.data_dir + dataset
+        adj_matrices, feature_matrices, labels = get_data(path)
+        graphs = from_matrices_to_graphs(adj_matrices)
+        random_graphs = generate_random_graph(graphs)
 
-    p_val_avgDegree = _get_p_val(graphs, random_graphs, list_avgDegree)
+        p_val_avgDegree, avg_gt_avgDegree, avg_random_avgDegree = _get_p_val(graphs, random_graphs, list_avgDegree)
 
-    p_val_shortestPathLength = _get_p_val(graphs, random_graphs, list_shortestPathLength)
-    
-    p_val_localEfficiency = _get_p_val(graphs, random_graphs, list_localEfficiency)
-    
+        p_val_shortestPathLength, avg_gt_shortestPathLength, avg_random_shortestPathLength = _get_p_val(graphs, random_graphs, list_shortestPathLength)
 
-    print("p_val_avgDegree: ", p_val_avgDegree)
-    print("p_val_shortestPathLength: ", p_val_shortestPathLength)
-    print("p_val_localEfficiency: ", p_val_localEfficiency)
-    pass
+        p_val_localEfficiency, avg_gt_localEfficiency, avg_random_localEfficiency = _get_p_val(graphs, random_graphs, list_localEfficiency)
+        
+        print("==============================================================")
+        print("{} avgDegree: p_val={}, avg_gt={}, avg_random={}".format(dataset, p_val_avgDegree, avg_gt_avgDegree, avg_random_avgDegree))
+        print("{} shortestPathLength: p_val={}, avg_gt={}, avg_random={}".format(dataset, p_val_shortestPathLength, avg_gt_shortestPathLength, avg_random_shortestPathLength))
+        print("{} localEfficiency: p_val={}, avg_gt={}, avg_random={}".format(dataset, p_val_localEfficiency, avg_gt_localEfficiency, avg_random_localEfficiency))
