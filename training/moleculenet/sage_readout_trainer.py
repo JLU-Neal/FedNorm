@@ -24,7 +24,7 @@ class SageMoleculeNetTrainer(ModelTrainer):
         super().__init__(model, args)
         
         self.graph_model = copy.deepcopy(model.sage)
-        self.setnet = SetNet(channel=SetNet_input_dim)
+        self.setnet = SetNet(channel=SetNet_input_dim, k=args.client_num_in_total)
         self.test_data = None
         self.best_score = 0
 

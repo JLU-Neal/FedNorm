@@ -230,7 +230,7 @@ def create_model(args, model_name, feat_dim, num_cats, output_dim):
             args
         )
         if args.SetNet:
-            trainer = SageMoleculeNetTrainer(model, SetNet_input_dim=feat_dim+args.node_embedding_dim)
+            trainer = SageMoleculeNetTrainer(model, SetNet_input_dim=feat_dim+args.node_embedding_dim, args=args)
         elif args.fl_algorithm == "FedAMP":
             trainer = SageMoleculeNetTrainerFedAMP(model, args)
         else:
