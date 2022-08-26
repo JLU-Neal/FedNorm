@@ -6,12 +6,12 @@ import os
 import sys
 import matplotlib.pyplot as plt
 import numpy
-from scipy.stats import norm, kurtosis, ttest_1samp
-import logging
+from scipy.stats import norm, kurtosis, ttest_1samp, ttest_ind
+
 import random
 
 from sklearn.exceptions import EfficiencyWarning
-from traitlets import default
+
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.getcwd(), "./../../../")))
 sys.path.insert(0, os.path.abspath(os.path.join(os.getcwd(), "")))
@@ -48,8 +48,10 @@ def degree_distribution(graphs: list):
 
 def analysis_degree_distribution(graphs: list, popmean: float):
     # kurtosis of degree distribution
-    overall_hist, _ = degree_distribution(graphs)
+    overall_hist, avg_degree = degree_distribution(graphs)
     kur = kurtosis(overall_hist)
+
+    popmean = (popmean * chunk_num - avg_degree) / (chunk_num - 1)
 
     #  t-test for degree distribution
     sample_observation = [[idx] * int(overall_hist[idx]) for idx in range(overall_hist.size)]
@@ -82,6 +84,8 @@ def avg_shortest_path_length(graphs: list):
 def analysis_avg_shortest_path_length(graphs: list, popmean: float):
     avg_length_each_graph, avg_len = avg_shortest_path_length(graphs)
     
+    popmean = (popmean * chunk_num - avg_len) / (chunk_num - 1)
+
     # t-test for avg shortest path length
     stattistic, p_value = ttest_1samp(avg_length_each_graph, popmean)
 
@@ -100,27 +104,12 @@ def local_effciency(graphs: list):
 def analysis_local_efficiency(graphs: list, popmean: float):
     effciency_each_graph, avg_effciency = local_effciency(graphs)
     
+    popmean = (popmean * chunk_num - avg_effciency) / (chunk_num - 1)
     # t-test for local efficiency
     stattistic, p_value = ttest_1samp(effciency_each_graph, popmean)
 
     return avg_effciency, p_value
 
-def label_distribution(labels: list, class_dim=0):
-    label_each_graph = []
-    for label in labels:
-        label_each_graph.append(label[class_dim])
-
-    avg_label = sum(label_each_graph) / len(label_each_graph)
-
-    return label_each_graph, avg_label
-
-def analysis_label_distribution(labels: list, popmean: float, class_dim=0):
-    label_each_graph, avg_label = label_distribution(labels, class_dim)
-    
-    # t-test for label
-    stattistic, p_value = ttest_1samp(label_each_graph, popmean)
-
-    return avg_label, p_value
 
 
 def visualize_graph(graph: nx.Graph):
@@ -135,7 +124,7 @@ if __name__ == "__main__":
 
 
     path = args.data_dir + args.dataset
-    client_number = 4
+
 
     adj_matrices, feature_matrices, labels = get_data(path)
     
@@ -143,6 +132,7 @@ if __name__ == "__main__":
     random.seed(666)
     all_idxs = list(range(len(graphs)))
     random.shuffle(all_idxs)
+    global chunk_num
     chunk_num = 10
     chunk_size = len(graphs) // chunk_num
     all_idxs_chunked = [all_idxs[i:i+chunk_size] for i in range(0, len(all_idxs), chunk_size)]
@@ -150,7 +140,7 @@ if __name__ == "__main__":
     popmean_degree = degree_distribution(graphs)[1]
     popmean_avg_shortest_path_length = avg_shortest_path_length(graphs)[1]
     popmean_local_efficiency = local_effciency(graphs)[1]
-    popmean_label = label_distribution(labels)[1]
+
 
 
     p_value_deg_dis_list = []
@@ -175,14 +165,6 @@ if __name__ == "__main__":
         print("avg local efficiency: {}, p-value: {}".format(avg_effciency, p_value_local_eff))
         p_value_local_efficiency_list.append(p_value_local_eff)
 
-        # avg_label, p_value_label = analysis_label_distribution(label_sublist, popmean_label)
-        # print("avg label: {}, p-value: {}".format(avg_label, p_value_label))
-        # p_value_label_list.append(p_value_label)
 
-    avg_p_value_deg_dis = sum(p_value_deg_dis_list) / len(p_value_deg_dis_list)
-    avg_p_value_avg_shortest_path_length = sum(p_value_avg_shortest_path_length_list) / len(p_value_avg_shortest_path_length_list)
-    avg_p_value_local_efficiency = sum(p_value_local_efficiency_list) / len(p_value_local_efficiency_list)
-    # avg_p_value_label = sum(p_value_label_list) / len(p_value_label_list)
-    print("avg p-value degree distribution: {}, avg p-value avg shortest path length: {}, avg p-value local efficiency: {}".format(avg_p_value_deg_dis, avg_p_value_avg_shortest_path_length, avg_p_value_local_efficiency))
     pass
 
